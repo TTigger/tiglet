@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { evaluate } from '../lib/expression';
+import { useUrlState } from '../lib/urlState';
 import CopyButton from '../components/CopyButton';
 
 export default function TextCalculator() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useUrlState('q', '');
   let result = '';
   let error = '';
   if (input.trim()) {
