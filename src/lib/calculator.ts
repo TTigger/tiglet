@@ -56,8 +56,10 @@ export function reducer(state: CalcState, action: CalcAction): CalcState {
       return { ...state, current: state.current + '.' };
     }
 
-    case 'negate':
+    case 'negate': {
+      if (state.overwrite) return state; // nothing freshly entered to negate
       return { ...state, current: formatResult(parseFloat(state.current) * -1) };
+    }
 
     case 'backspace': {
       if (state.overwrite) return state;

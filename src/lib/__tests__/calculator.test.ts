@@ -34,4 +34,22 @@ describe('reducer', () => {
     s = reducer(s, { type: 'equals' });
     expect(s.current).toBe('錯誤');
   });
+  it('negate is a no-op right after an operator (overwrite pending)', () => {
+    let s = initialCalc;
+    s = reducer(s, { type: 'digit', digit: '5' });
+    s = reducer(s, { type: 'op', operator: '+' });
+    s = reducer(s, { type: 'negate' }); // nothing entered yet -> no-op
+    s = reducer(s, { type: 'digit', digit: '3' });
+    s = reducer(s, { type: 'equals' });
+    expect(s.current).toBe('8'); // 5 + 3, the phantom -5 was never applied
+  });
+  it('negate flips a freshly entered operand', () => {
+    let s = initialCalc;
+    s = reducer(s, { type: 'digit', digit: '5' });
+    s = reducer(s, { type: 'op', operator: '+' });
+    s = reducer(s, { type: 'digit', digit: '3' });
+    s = reducer(s, { type: 'negate' });
+    s = reducer(s, { type: 'equals' });
+    expect(s.current).toBe('2'); // 5 + (-3)
+  });
 });
