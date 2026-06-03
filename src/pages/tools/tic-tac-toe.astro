@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TicTacToe from '../../tools/TicTacToe.tsx';
+---
+<BaseLayout title="井字遊戲 — Tiglet" description="雙人對戰或挑戰電腦的經典井字棋。">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">井字遊戲</h1>
+  <TicTacToe client:load />
+</BaseLayout>
