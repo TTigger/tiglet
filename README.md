@@ -3,7 +3,7 @@
 A clean, no-login collection of small browser tools — and a personal portfolio piece.
 Built with Astro + React islands + Tailwind CSS v4, deployed on Vercel.
 
-> 🔗 **Live demo:** _to be added after deployment_
+> 🔗 **Live demo:** [tiglet.vercel.app](https://tiglet.vercel.app)
 
 Everything runs entirely in your browser. No accounts, no servers, no tracking — your input never leaves your device.
 
