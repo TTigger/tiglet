@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Wheel from '../../tools/Wheel.tsx';
+---
+<BaseLayout title="決定輪盤 — Tiglet" description="輸入選項，轉一下讓命運決定。" toolId="wheel">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">決定輪盤</h1>
+  <Wheel client:load />
+</BaseLayout>
