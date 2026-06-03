@@ -7,15 +7,17 @@ const STRENGTH_COLOR = { weak: 'text-red-500', medium: 'text-amber-500', strong:
 
 export default function Password() {
   const [opts, setOpts] = useState<PasswordOptions>({ length: 16, upper: true, lower: true, digits: true, symbols: false });
-  const [password, setPassword] = useState('');
+  const [result, setResult] = useState<{ pw: string; opts: PasswordOptions } | null>(null);
 
-  function generate() { setPassword(generatePassword(opts)); }
-  function toggle(key: keyof PasswordOptions) { setOpts((o) => ({ ...o, [key]: !o[key] })); }
+  function generate() { setResult({ pw: generatePassword(opts), opts }); }
+  type BoolKey = 'upper' | 'lower' | 'digits' | 'symbols';
+  function toggle(key: BoolKey) { setOpts((o) => ({ ...o, [key]: !o[key] })); }
 
-  const strength = estimateStrength(opts);
+  const password = result?.pw ?? '';
+  const strength = estimateStrength(result ? result.opts : opts);
   const noSet = !opts.upper && !opts.lower && !opts.digits && !opts.symbols;
 
-  const toggles: { key: keyof PasswordOptions; label: string }[] = [
+  const toggles: { key: BoolKey; label: string }[] = [
     { key: 'upper', label: '大寫 A-Z' },
     { key: 'lower', label: '小寫 a-z' },
     { key: 'digits', label: '數字 0-9' },

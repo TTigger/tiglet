@@ -14,6 +14,7 @@ export default function QrCode() {
         const QR = await import('qrcode');
         if (cancelled || !canvasRef.current) return;
         await QR.toCanvas(canvasRef.current, value, { width: 256, margin: 2, color: { dark: '#1A1A18', light: '#FFFFFF' } });
+        if (cancelled) return;
         setReady(true);
       } catch {
         setReady(false);
