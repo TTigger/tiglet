@@ -26,6 +26,9 @@ pnpm-debug.log*
 # local reference material (not tracked — research notes for future tools)
 references/
 
+# internal design docs (specs/plans) — kept locally, not published
+docs/
+
 # local env files
 .env.local
 .env.*.local
