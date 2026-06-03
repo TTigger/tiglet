@@ -15,6 +15,16 @@
   --radius-card: 1rem;
 }
 
+:root[data-theme="dark"] {
+  --color-bg: #1A1714;
+  --color-surface: #241F1B;
+  --color-edge: #3A332B;
+  --color-ink: #F3EEE7;
+  --color-muted: #A39C92;
+  --color-accent: #E08A5F;
+  --color-accent-hover: #EC9A6F;
+}
+
 @layer base {
   html { background-color: var(--color-bg); color: var(--color-ink); }
   body { font-family: var(--font-sans); }
