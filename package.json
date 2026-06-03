@@ -2,6 +2,7 @@
   "name": "tiglet",
   "type": "module",
   "version": "0.0.1",
+  "description": "A clean, no-login collection of small browser tools — built with Astro + React islands + Tailwind CSS v4.",
   "engines": {
     "node": ">=22.12.0"
   },
