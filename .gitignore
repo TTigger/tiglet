@@ -25,3 +25,13 @@ pnpm-debug.log*
 
 # local reference material (not tracked — research notes for future tools)
 references/
+
+# local env files
+.env.local
+.env.*.local
+
+# vercel cli
+.vercel/
+
+# test coverage
+coverage/
