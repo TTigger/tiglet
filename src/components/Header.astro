@@ -1,13 +1,13 @@
 ---
+import ThemeToggle from './ThemeToggle.tsx';
 ---
 <header class="border-b border-edge">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
     <a href="/" class="font-serif text-2xl text-ink">Tiglet</a>
-    <a
-      href="https://github.com/TTigger"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="text-sm text-muted transition-colors hover:text-accent"
-    >GitHub</a>
+    <div class="flex items-center gap-4">
+      <span class="hidden text-xs text-muted sm:inline">⌘K 搜尋</span>
+      <ThemeToggle client:load />
+      <a href="https://github.com/TTigger" target="_blank" rel="noopener noreferrer" class="text-sm text-muted transition-colors hover:text-accent">GitHub</a>
+    </div>
   </div>
 </header>

@@ -1,0 +1,28 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { getFavorites, isFavorite, toggleFavorite, getRecent, pushRecent } from '../storage';
+
+beforeEach(() => { localStorage.clear(); });
+
+describe('favorites', () => {
+  it('starts empty', () => expect(getFavorites()).toEqual([]));
+  it('toggles a favorite on and off', () => {
+    toggleFavorite('calculator');
+    expect(isFavorite('calculator')).toBe(true);
+    toggleFavorite('calculator');
+    expect(isFavorite('calculator')).toBe(false);
+  });
+});
+
+describe('recent', () => {
+  it('keeps most-recent first and de-duplicates', () => {
+    pushRecent('a');
+    pushRecent('b');
+    pushRecent('a');
+    expect(getRecent()).toEqual(['a', 'b']);
+  });
+  it('caps the list at 6 entries', () => {
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(pushRecent);
+    expect(getRecent()).toHaveLength(6);
+    expect(getRecent()[0]).toBe('g');
+  });
+});
