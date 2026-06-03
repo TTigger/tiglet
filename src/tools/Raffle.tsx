@@ -44,7 +44,12 @@ export default function Raffle() {
 
   function draw() {
     const pool = excludeWon ? names.filter((nm) => !winners.includes(nm)) : names;
-    setWinners(drawWinners(pool, count));
+    const drawn = drawWinners(pool, count);
+    setWinners((prev) => (excludeWon ? [...prev, ...drawn] : drawn));
+  }
+
+  function reset() {
+    setWinners([]);
   }
 
   return (
@@ -95,7 +100,10 @@ export default function Raffle() {
 
       {winners.length > 0 && (
         <div className="mt-6 rounded-[var(--radius-card)] border border-edge bg-surface p-6">
-          <h2 className="mb-3 font-serif text-xl text-ink">🎉 中獎名單</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-serif text-xl text-ink">🎉 中獎名單</h2>
+            <button onClick={reset} className="text-sm text-muted hover:text-accent">清除</button>
+          </div>
           <ul className="space-y-1">
             {winners.map((w, i) => <li key={i} className="text-lg text-ink">{i + 1}. {w}</li>)}
           </ul>
