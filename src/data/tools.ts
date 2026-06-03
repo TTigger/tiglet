@@ -21,7 +21,7 @@ export const tools: Tool[] = [
   { id: 'wheel', title: '決定輪盤', description: '輸入選項，轉一下讓命運決定。', category: '隨機決定', path: '/tools/wheel', icon: '🎡', status: 'available', keywords: ['抽籤', 'spin'] },
   { id: 'raffle', title: '名單抽獎', description: '匯入 Excel 名單，隨機抽出中獎者。', category: '隨機決定', path: '/tools/raffle', icon: '🎁', status: 'available', keywords: ['lottery', 'excel'] },
   { id: 'timer', title: '計時器', description: '倒數計時與碼錶。', category: '實用工具', path: '/tools/timer', icon: '⏱️', status: 'available', keywords: ['timer', 'stopwatch'] },
-  { id: 'dice', title: '擲骰子', description: '可調數量與面數的擲骰工具。', category: '實用工具', path: '/tools/dice', icon: '🎲', status: 'soon', keywords: ['dice', 'roll'] },
+  { id: 'dice', title: '擲骰子', description: '可調數量與面數的擲骰工具。', category: '實用工具', path: '/tools/dice', icon: '🎲', status: 'available', keywords: ['dice', 'roll'] },
   { id: 'qrcode', title: 'QR 產生器', description: '把文字或網址轉成 QR 碼並下載。', category: '實用工具', path: '/tools/qrcode', icon: '🔳', status: 'soon', keywords: ['qr', 'qrcode'] },
   { id: 'password', title: '密碼產生器', description: '自訂規則產生高強度隨機密碼。', category: '實用工具', path: '/tools/password', icon: '🔑', status: 'soon', keywords: ['password', '密碼'] },
 ];
