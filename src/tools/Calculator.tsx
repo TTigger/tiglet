@@ -1,5 +1,6 @@
 import { useReducer, useEffect } from 'react';
 import { reducer, initialCalc, type Operator } from '../lib/calculator';
+import CopyButton from '../components/CopyButton';
 
 export default function Calculator() {
   const [state, dispatch] = useReducer(reducer, initialCalc);
@@ -23,7 +24,8 @@ export default function Calculator() {
 
   return (
     <div className="mx-auto max-w-xs">
-      <div className="mb-4 rounded-[var(--radius-card)] border border-edge bg-surface p-6 text-right font-mono text-3xl tabular-nums text-ink overflow-x-auto">
+      <div className="relative mb-4 rounded-[var(--radius-card)] border border-edge bg-surface p-6 text-right font-mono text-3xl tabular-nums text-ink overflow-x-auto">
+        <div className="absolute left-3 top-3"><CopyButton value={state.current} /></div>
         {state.current}
       </div>
       <div className="grid grid-cols-4 gap-2">
