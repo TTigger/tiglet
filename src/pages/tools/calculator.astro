@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Calculator from '../../tools/Calculator.tsx';
+---
+<BaseLayout title="計算機 — Tiglet" description="四則運算與鍵盤輸入的基本計算機。">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">計算機</h1>
+  <Calculator client:load />
+</BaseLayout>
