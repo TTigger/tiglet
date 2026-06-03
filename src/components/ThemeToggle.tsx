@@ -1,14 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type Theme = 'light' | 'dark';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('light');
-
-  useEffect(() => {
-    const current = (document.documentElement.dataset.theme as Theme) || 'light';
-    setTheme(current);
-  }, []);
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof document !== 'undefined'
+      ? ((document.documentElement.dataset.theme as Theme) || 'light')
+      : 'light'
+  );
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';

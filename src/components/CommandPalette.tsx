@@ -38,7 +38,7 @@ export default function CommandPalette() {
   if (!open) return null;
 
   function onInputKey(e: ReactKeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setIndex((i) => Math.min(i + 1, results.length - 1)); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setIndex((i) => Math.min(i + 1, Math.max(0, results.length - 1))); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setIndex((i) => Math.max(i - 1, 0)); }
     else if (e.key === 'Enter') {
       const t = results[index];
