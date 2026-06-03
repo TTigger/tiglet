@@ -1,17 +1,11 @@
 ---
-
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SearchBar from '../components/SearchBar.tsx';
 ---
-
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout>
+  <section class="mb-10">
+    <h1 class="font-serif text-4xl text-ink">Tiglet</h1>
+    <p class="mt-2 text-muted">一組乾淨、免登入的瀏覽器小工具。</p>
+  </section>
+  <SearchBar client:load />
+</BaseLayout>
