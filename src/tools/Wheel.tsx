@@ -16,6 +16,7 @@ export default function Wheel() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
+  const [winnerIdx, setWinnerIdx] = useState(-1);
 
   const n = options.length;
   const a = n > 0 ? 360 / n : 0;
@@ -26,9 +27,10 @@ export default function Wheel() {
     const theta = w * a + a / 2;
     const base = rotation - (rotation % 360);
     setWinner(null);
+    setWinnerIdx(-1);
     setSpinning(true);
     setRotation(base + 360 * 5 + (360 - theta));
-    setTimeout(() => { setSpinning(false); setWinner(options[w]); }, 4200);
+    setTimeout(() => { setSpinning(false); setWinner(options[w]); setWinnerIdx(w); }, 4200);
   }
 
   return (
@@ -53,10 +55,11 @@ export default function Wheel() {
                 const lx = CX + R * 0.6 * Math.sin(rad);
                 const ly = CY - R * 0.6 * Math.cos(rad);
                 const label = opt.length > 8 ? opt.slice(0, 8) + '…' : opt;
+                const isWin = i === winnerIdx;
                 return (
-                  <g key={i}>
-                    <path d={`M${CX} ${CY} L${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`} fill={COLORS[i % COLORS.length]} stroke="#FFFFFF" strokeWidth="1" />
-                    <text x={lx} y={ly} fill="#FFFFFF" fontSize="12" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${i * a + a / 2}, ${lx}, ${ly})`}>{label}</text>
+                  <g key={i} opacity={winnerIdx >= 0 && !isWin ? 0.45 : 1} style={{ transition: 'opacity 0.4s ease' }}>
+                    <path d={`M${CX} ${CY} L${x1} ${y1} A${R} ${R} 0 ${large} 1 ${x2} ${y2} Z`} fill={COLORS[i % COLORS.length]} stroke={isWin ? '#1A1A18' : '#FFFFFF'} strokeWidth={isWin ? 3 : 1} />
+                    <text x={lx} y={ly} fill="#FFFFFF" fontSize="12" fontWeight={isWin ? 700 : 400} textAnchor="middle" dominantBaseline="middle" transform={`rotate(${i * a + a / 2}, ${lx}, ${ly})`}>{label}</text>
                   </g>
                 );
               })
@@ -66,7 +69,7 @@ export default function Wheel() {
         </svg>
       </div>
 
-      {winner && <p className="mb-4 text-center font-serif text-2xl text-ink">🎉 {winner}</p>}
+      {winner && <p key={winner + winnerIdx} className="die-pop mb-4 text-center font-serif text-2xl text-ink">🎉 {winner}</p>}
 
       <button onClick={spin} disabled={n < 2 || spinning} className="mb-4 w-full rounded-lg bg-accent py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50">
         {spinning ? '轉動中…' : '開始抽籤'}
