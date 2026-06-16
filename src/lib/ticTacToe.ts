@@ -10,11 +10,18 @@ const LINES: number[][] = [
 
 export const emptyBoard = (): Board => Array(9).fill(null);
 
-export function winner(b: Board): Player | null {
-  for (const [a, c, d] of LINES) {
-    if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a] as Player;
+/** The three indices of the winning line, or null if there is no winner. */
+export function winningLine(b: Board): number[] | null {
+  for (const line of LINES) {
+    const [a, c, d] = line;
+    if (b[a] && b[a] === b[c] && b[a] === b[d]) return line;
   }
   return null;
+}
+
+export function winner(b: Board): Player | null {
+  const line = winningLine(b);
+  return line ? (b[line[0]] as Player) : null;
 }
 
 export function isDraw(b: Board): boolean {
