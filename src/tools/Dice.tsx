@@ -44,7 +44,7 @@ function Die3D({ value, sides, rolling, delay, highlight }: {
     <span className="dice-scene">
       <span className={`dice-cube ${rolling ? 'rolling' : ''}`} style={rolling ? { animationDelay: `${delay}s` } : undefined}>
         {FACES.map((cls) => (
-          <span key={cls} className={`dice-face ${cls} ${highlight && !rolling ? 'ring-2 ring-accent/50' : ''}`}>
+          <span key={cls} className={`dice-face ${cls} ${highlight && !rolling && cls === 'front' ? '!border-accent' : ''}`}>
             {sides === 6 ? (
               <Pips value={faces![cls]} />
             ) : (
@@ -108,7 +108,7 @@ export default function Dice() {
       </div>
 
       <div className="rounded-[var(--radius-card)] border border-edge bg-bg p-8 text-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-8">
+        <div className="flex flex-wrap items-center justify-center gap-1">
           {dice.map((v, i) => (
             <Die3D key={i} value={v} sides={sides} rolling={rolling} delay={(i % 6) * 0.05} highlight={v === max} />
           ))}
