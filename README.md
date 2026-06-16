@@ -14,6 +14,7 @@ Everything runs entirely in your browser. No accounts, no servers, no tracking �
 - **Favorites & recently used** — pin the tools you use, surfaced on the home page
 - **One-click copy** — every result has a copy button
 - **Shareable deep links** — tool state lives in the URL (e.g. the wheel's options)
+- **Playful, accessible animations** — dice tumble, the wheel decelerates, the timer ring drains, the raffle reels; all respect `prefers-reduced-motion`
 - **Installable PWA** — add to your home screen and use it offline
 
 ## Tools
@@ -23,10 +24,11 @@ Everything runs entirely in your browser. No accounts, no servers, no tracking �
 | Calculators | **Calculator** | Four-function calculator with keyboard input |
 | Calculators | **Text Calculator** | Type an expression, get the result (safe parser — no `eval`) |
 | Games | **Tic-Tac-Toe** | Two-player or vs. an unbeatable computer (minimax) |
+| Games | **Bingo** | Classic 5×5 bingo caller — draws balls, daub your card, auto-detects lines, corners & blackout |
 | Random | **Decision Wheel** | Spin a wheel of options; share the options via the URL |
-| Random | **Name Raffle** | Draw winners from a list or an imported **Excel / CSV** file |
-| Utilities | **Timer** | Countdown (with presets) and stopwatch, with a beep on finish |
-| Utilities | **Dice** | Roll any number of d4–d20 dice and total them |
+| Random | **Name Raffle** | Draw winners from a list or an imported **Excel / CSV** file, with per-prize rounds |
+| Utilities | **Timer** | Countdown (with presets) and stopwatch, with a progress ring and a beep on finish |
+| Utilities | **Dice** | Roll any number of d4–d20 dice (real pip faces for d6), total them, keep a roll history |
 | Utilities | **QR Code** | Turn text or a URL into a downloadable QR code |
 | Utilities | **Password Generator** | Customizable, ambiguity-free random passwords with a strength meter |
 
