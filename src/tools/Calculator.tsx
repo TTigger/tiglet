@@ -19,8 +19,8 @@ export default function Calculator() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const btn = 'rounded-lg border border-edge bg-surface py-4 text-lg text-ink transition-colors hover:border-accent/40';
-  const op = 'rounded-lg border border-edge bg-surface py-4 text-lg text-accent transition-colors hover:bg-accent hover:text-white';
+  const btn = 'rounded-lg border border-edge bg-surface py-4 text-lg text-ink transition duration-75 hover:border-accent/40 active:scale-90 active:bg-accent/10';
+  const op = 'rounded-lg border border-edge bg-surface py-4 text-lg text-accent transition duration-75 hover:bg-accent hover:text-white active:scale-90';
 
   return (
     <div className="mx-auto max-w-xs">
