@@ -46,11 +46,21 @@
 .die-tumble { animation: die-tumble 0.42s ease-in-out infinite; }
 .die-pop    { animation: die-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-/* Dice: 3D cube — live preview + tumble-and-jump while rolling */
-.dice-scene { perspective: 520px; display: inline-block; }
-.dice-cube, .dice-face { width: 52px; height: 52px; }
+/* Dice: 3D cube — live preview + tumble-and-jump while rolling.
+   Each die gets a padded scene box (88px) so the cube's 3D projection
+   never overlaps its neighbours or the surrounding text. */
+.dice-scene {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  perspective: 600px;
+}
 .dice-cube {
   position: relative;
+  width: 52px;
+  height: 52px;
   transform-style: preserve-3d;
   transform: rotateX(-24deg) rotateY(28deg);
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -58,20 +68,25 @@
 .dice-cube.rolling { animation: dice-roll 0.9s ease-in-out; }
 .dice-face {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.55rem;
+  border-radius: 0.5rem;
   background: var(--color-surface);
   border: 1px solid var(--color-edge);
-  box-shadow: inset 0 0 6px color-mix(in srgb, var(--color-ink) 8%, transparent);
+  backface-visibility: hidden;
 }
-.dice-face.front  { transform: translateZ(26px); }
+/* Shade the three visible faces so the cube reads as 3D:
+   top catches light, front is mid, right is in shadow. */
+.dice-face.front  { transform: translateZ(26px);                 background-image: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)); }
 .dice-face.back   { transform: rotateY(180deg) translateZ(26px); }
-.dice-face.right  { transform: rotateY(90deg)  translateZ(26px); }
+.dice-face.right  { transform: rotateY(90deg)  translateZ(26px); background-image: linear-gradient(rgba(0, 0, 0, 0.20), rgba(0, 0, 0, 0.20)); }
 .dice-face.left   { transform: rotateY(-90deg) translateZ(26px); }
-.dice-face.top    { transform: rotateX(90deg)  translateZ(26px); }
+.dice-face.top    { transform: rotateX(90deg)  translateZ(26px); background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)); }
 .dice-face.bottom { transform: rotateX(-90deg) translateZ(26px); }
 @keyframes dice-roll {
   0%   { transform: rotateX(-24deg) rotateY(28deg)  translateY(0); }
