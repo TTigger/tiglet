@@ -46,6 +46,42 @@
 .die-tumble { animation: die-tumble 0.42s ease-in-out infinite; }
 .die-pop    { animation: die-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
+/* Dice: 3D cube — live preview + tumble-and-jump while rolling */
+.dice-scene { perspective: 520px; display: inline-block; }
+.dice-cube, .dice-face { width: 52px; height: 52px; }
+.dice-cube {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(-24deg) rotateY(28deg);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.dice-cube.rolling { animation: dice-roll 0.9s ease-in-out; }
+.dice-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-edge);
+  box-shadow: inset 0 0 6px color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
+.dice-face.front  { transform: translateZ(26px); }
+.dice-face.back   { transform: rotateY(180deg) translateZ(26px); }
+.dice-face.right  { transform: rotateY(90deg)  translateZ(26px); }
+.dice-face.left   { transform: rotateY(-90deg) translateZ(26px); }
+.dice-face.top    { transform: rotateX(90deg)  translateZ(26px); }
+.dice-face.bottom { transform: rotateX(-90deg) translateZ(26px); }
+@keyframes dice-roll {
+  0%   { transform: rotateX(-24deg) rotateY(28deg)  translateY(0); }
+  15%  { transform: rotateX(150deg) rotateY(120deg) translateY(-34px) scale(1.06); }
+  35%  { transform: rotateX(300deg) rotateY(250deg) translateY(0)     scale(0.96); }
+  55%  { transform: rotateX(460deg) rotateY(400deg) translateY(-20px); }
+  75%  { transform: rotateX(620deg) rotateY(540deg) translateY(0); }
+  100% { transform: rotateX(696deg) rotateY(748deg) translateY(0); } /* ≡ base (-24°, 28°) mod 360 */
+}
+
 /* Tic-tac-toe: marks pop in when placed, winning line pulses */
 @keyframes mark-pop {
   0%   { transform: scale(0.2) rotate(-12deg); opacity: 0; }
@@ -83,5 +119,7 @@
 .qr-scan { animation: qr-scan 0.7s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
-  .die-tumble, .die-pop, .mark-pop, .cell-win, .timer-done, .marquee-track, .qr-scan { animation: none; }
+  .die-tumble, .die-pop, .mark-pop, .cell-win, .timer-done, .marquee-track, .qr-scan,
+  .dice-cube.rolling { animation: none; }
+  .dice-cube { transition: none; }
 }
