@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { generatePassword, estimateStrength, type PasswordOptions } from '../lib/password';
+import { generatePassword, estimateStrength, strengthScore, type PasswordOptions } from '../lib/password';
 import CopyButton from '../components/CopyButton';
 
 const STRENGTH_LABEL = { weak: '弱', medium: '中', strong: '強' } as const;
 const STRENGTH_COLOR = { weak: 'text-red-500', medium: 'text-amber-500', strong: 'text-green-600' } as const;
+const STRENGTH_BAR = { weak: 'bg-red-500', medium: 'bg-amber-500', strong: 'bg-green-600' } as const;
 
 export default function Password() {
   const [opts, setOpts] = useState<PasswordOptions>({ length: 16, upper: true, lower: true, digits: true, symbols: false });
@@ -14,7 +15,8 @@ export default function Password() {
   function toggle(key: BoolKey) { setOpts((o) => ({ ...o, [key]: !o[key] })); }
 
   const password = result?.pw ?? '';
-  const strength = estimateStrength(result ? result.opts : opts);
+  const strength = estimateStrength(opts);
+  const score = strengthScore(opts);
   const noSet = !opts.upper && !opts.lower && !opts.digits && !opts.symbols;
 
   const toggles: { key: BoolKey; label: string }[] = [
@@ -37,6 +39,12 @@ export default function Password() {
           <span className={STRENGTH_COLOR[strength]}>強度：{STRENGTH_LABEL[strength]}</span>
         </label>
         <input type="range" min={6} max={64} value={opts.length} onChange={(e) => setOpts((o) => ({ ...o, length: Number(e.target.value) }))} className="mt-2 w-full accent-[var(--color-accent)]" />
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-edge">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ease-out ${STRENGTH_BAR[strength]}`}
+            style={{ width: `${Math.round(score * 100)}%` }}
+          />
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-2">

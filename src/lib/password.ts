@@ -29,6 +29,13 @@ export function generatePassword(opts: PasswordOptions, rng: () => number = Math
   return out;
 }
 
+/** Normalized strength for UI meters: 0 (nothing selected) … 1 (max). */
+export function strengthScore(opts: PasswordOptions): number {
+  const sets = [opts.upper, opts.lower, opts.digits, opts.symbols].filter(Boolean).length;
+  if (sets === 0 || opts.length <= 0) return 0;
+  return Math.max(0, Math.min(1, (opts.length * sets) / 72));
+}
+
 export function estimateStrength(opts: PasswordOptions): 'weak' | 'medium' | 'strong' {
   const sets = [opts.upper, opts.lower, opts.digits, opts.symbols].filter(Boolean).length;
   if (sets === 0 || opts.length < 8) return 'weak';
