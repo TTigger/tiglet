@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generatePassword, estimateStrength, type PasswordOptions } from '../password';
+import { generatePassword, estimateStrength, strengthScore, type PasswordOptions } from '../password';
 
 const base: PasswordOptions = { length: 12, upper: false, lower: true, digits: false, symbols: false };
 
@@ -25,5 +25,19 @@ describe('estimateStrength', () => {
   });
   it('rates a long multi-set password strong', () => {
     expect(estimateStrength({ length: 20, upper: true, lower: true, digits: true, symbols: true })).toBe('strong');
+  });
+});
+
+describe('strengthScore', () => {
+  it('is 0 when no set is selected', () => {
+    expect(strengthScore({ length: 16, upper: false, lower: false, digits: false, symbols: false })).toBe(0);
+  });
+  it('caps at 1 for a long all-set password', () => {
+    expect(strengthScore({ length: 64, upper: true, lower: true, digits: true, symbols: true })).toBe(1);
+  });
+  it('grows with length and set count', () => {
+    const a = strengthScore({ length: 8, upper: false, lower: true, digits: false, symbols: false });
+    const b = strengthScore({ length: 16, upper: true, lower: true, digits: false, symbols: false });
+    expect(b).toBeGreaterThan(a);
   });
 });

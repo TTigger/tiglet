@@ -4,6 +4,7 @@ export default function QrCode() {
   const [text, setText] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
+  const [scanKey, setScanKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,6 +17,7 @@ export default function QrCode() {
         await QR.toCanvas(canvasRef.current, value, { width: 256, margin: 2, color: { dark: '#1A1A18', light: '#FFFFFF' } });
         if (cancelled) return;
         setReady(true);
+        setScanKey((k) => k + 1);
       } catch {
         setReady(false);
       }
@@ -42,8 +44,9 @@ export default function QrCode() {
         className="mb-6 w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
       <div className="flex flex-col items-center">
-        <div className={`rounded-[var(--radius-card)] border border-edge bg-white p-4 ${ready ? '' : 'opacity-30'}`}>
+        <div className={`relative overflow-hidden rounded-[var(--radius-card)] border border-edge bg-white p-4 transition-all duration-500 ${ready ? 'scale-100 opacity-100' : 'scale-95 opacity-30'}`}>
           <canvas ref={canvasRef} width={256} height={256} />
+          {ready && <div key={scanKey} className="qr-scan pointer-events-none absolute inset-x-4 top-4 h-0.5 bg-accent/70 shadow-[0_0_8px_var(--color-accent)]" />}
         </div>
         <button onClick={download} disabled={!ready} className="mt-4 rounded-lg bg-accent px-6 py-2 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50">
           下載 PNG

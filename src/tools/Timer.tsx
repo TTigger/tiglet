@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatTime } from '../lib/timer';
+import { formatTime, remainingFraction } from '../lib/timer';
+
+const RING_R = 100;
+const RING_C = 2 * Math.PI * RING_R;
 
 type Mode = 'countdown' | 'stopwatch';
 const PRESETS = [1, 3, 5, 10];
@@ -57,6 +60,11 @@ export default function Timer() {
 
   const btn = 'rounded-lg border border-edge px-4 py-2 text-sm transition-colors';
 
+  // Countdown: ring depletes as time runs out. Stopwatch: ring fills each minute.
+  const frac = mode === 'countdown' ? remainingFraction(seconds, initial) : (seconds % 60) / 60;
+  const low = mode === 'countdown' && seconds > 0 && seconds <= 10;
+  const finished = mode === 'countdown' && initial > 0 && seconds === 0;
+
   return (
     <div className="mx-auto max-w-sm text-center">
       <div className="mb-6 flex justify-center gap-2">
@@ -64,7 +72,22 @@ export default function Timer() {
         <button onClick={() => switchMode('stopwatch')} className={`${btn} ${mode === 'stopwatch' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>碼錶</button>
       </div>
 
-      <div className="mb-6 font-mono text-6xl tabular-nums text-ink">{formatTime(seconds)}</div>
+      <div className="relative mx-auto mb-6 h-60 w-60">
+        <svg viewBox="0 0 220 220" className="h-full w-full -rotate-90">
+          <circle cx="110" cy="110" r={RING_R} fill="none" stroke="var(--color-edge)" strokeWidth="10" />
+          <circle
+            cx="110" cy="110" r={RING_R} fill="none"
+            stroke={low || finished ? '#ef4444' : 'var(--color-accent)'}
+            strokeWidth="10" strokeLinecap="round"
+            strokeDasharray={RING_C}
+            strokeDashoffset={RING_C * (1 - frac)}
+            style={{ transition: running ? 'stroke-dashoffset 1s linear, stroke 0.3s ease' : 'stroke 0.3s ease' }}
+          />
+        </svg>
+        <div className={`absolute inset-0 flex items-center justify-center font-mono text-5xl tabular-nums ${finished ? 'timer-done text-red-500' : low ? 'text-red-500' : 'text-ink'}`}>
+          {formatTime(seconds)}
+        </div>
+      </div>
 
       {mode === 'countdown' && (
         <div className="mb-6 flex flex-wrap justify-center gap-2">
