@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
 
@@ -7,6 +8,7 @@ export default defineConfig({
   site: 'https://tiglet.vercel.app',
   integrations: [
     react(),
+    sitemap(),
     AstroPWA({
       registerType: 'autoUpdate',
       manifest: {

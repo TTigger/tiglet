@@ -7,6 +7,23 @@ import TrackVisit from '../components/TrackVisit.tsx';
 
 interface Props { title?: string; description?: string; toolId?: string; }
 const { title = 'Tiglet — 小工具站', description = 'TTigger 的小工具集與作品集。', toolId } = Astro.props;
+
+const site = Astro.site ?? new URL('https://tiglet.vercel.app');
+const canonical = new URL(Astro.url.pathname, site);
+const ogImage = new URL('/pwa-512x512.png', site);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Tiglet',
+  url: site.href,
+  description: 'A clean, no-login collection of small browser tools.',
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Any',
+  browserRequirements: 'Requires JavaScript',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  author: { '@type': 'Person', name: 'TTigger', url: 'https://github.com/TTigger' },
+};
 ---
 <!doctype html>
 <html lang="zh-Hant">
@@ -24,6 +41,27 @@ const { title = 'Tiglet — 小工具站', description = 'TTigger 的小工具�
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tiglet" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImage.href} />
+    <meta property="og:locale" content="zh_Hant" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+
+    <meta name="theme-color" content="#D97757" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
