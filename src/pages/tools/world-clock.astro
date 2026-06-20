@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorldClock from '../../tools/WorldClock.tsx';
+---
+<BaseLayout title="世界時鐘 — Tiglet" description="各大城市即時時間與時差，並可推算某地某時間在另一地是幾點。" toolId="world-clock">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">世界時鐘</h1>
+  <WorldClock client:visible />
+</BaseLayout>

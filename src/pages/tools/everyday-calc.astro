@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EverydayCalc from '../../tools/EverydayCalc.tsx';
+---
+<BaseLayout title="生活計算 — Tiglet" description="BMI、百分比、折扣、小費分帳，日常常用的小計算機集合在一頁。" toolId="everyday-calc">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">生活計算</h1>
+  <EverydayCalc client:visible />
+</BaseLayout>
