@@ -27,4 +27,5 @@ export const tools: Tool[] = [
   { id: 'password', title: '密碼產生器', description: '自訂規則產生高強度隨機密碼。', category: '實用工具', path: '/tools/password', icon: '🔑', status: 'available', keywords: ['password', '密碼'] },
   { id: 'color-converter', title: '色彩轉換器', description: '在 HEX、RGB、HSL 之間即時轉換色碼。', category: '實用工具', path: '/tools/color-converter', icon: '🎨', status: 'available', keywords: ['color', 'hex', 'rgb', 'hsl', '色碼', '顏色'] },
   { id: 'color-extractor', title: '圖片取色', description: '上傳圖片，自動列出主要色號並複製。', category: '實用工具', path: '/tools/color-extractor', icon: '🌈', status: 'available', keywords: ['color', 'palette', '取色', '色票', '調色盤'] },
+  { id: 'image-studio', title: '圖片工具', description: '壓縮、縮放、格式轉換，附前後對比。', category: '實用工具', path: '/tools/image-studio', icon: '🖼️', status: 'available', keywords: ['image', '壓縮', '縮放', '轉檔', 'compress', 'resize', 'convert', 'webp'] },
 ];
