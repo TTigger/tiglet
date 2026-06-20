@@ -25,4 +25,6 @@ export const tools: Tool[] = [
   { id: 'dice', title: '擲骰子', description: '可調數量與面數的擲骰工具。', category: '實用工具', path: '/tools/dice', icon: '🎲', status: 'available', keywords: ['dice', 'roll'] },
   { id: 'qrcode', title: 'QR 產生器', description: '把文字或網址轉成 QR 碼並下載。', category: '實用工具', path: '/tools/qrcode', icon: '🔳', status: 'available', keywords: ['qr', 'qrcode'] },
   { id: 'password', title: '密碼產生器', description: '自訂規則產生高強度隨機密碼。', category: '實用工具', path: '/tools/password', icon: '🔑', status: 'available', keywords: ['password', '密碼'] },
+  { id: 'color-converter', title: '色彩轉換器', description: '在 HEX、RGB、HSL 之間即時轉換色碼。', category: '實用工具', path: '/tools/color-converter', icon: '🎨', status: 'available', keywords: ['color', 'hex', 'rgb', 'hsl', '色碼', '顏色'] },
+  { id: 'color-extractor', title: '圖片取色', description: '上傳圖片，自動列出主要色號並複製。', category: '實用工具', path: '/tools/color-extractor', icon: '🌈', status: 'available', keywords: ['color', 'palette', '取色', '色票', '調色盤'] },
 ];
