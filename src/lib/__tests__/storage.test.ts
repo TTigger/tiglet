@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getFavorites, isFavorite, toggleFavorite, getRecent, pushRecent } from '../storage';
+import { getFavorites, isFavorite, toggleFavorite, getRecent, pushRecent, getNumber, setNumber } from '../storage';
 
 beforeEach(() => { localStorage.clear(); });
 
@@ -24,5 +24,17 @@ describe('recent', () => {
     ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(pushRecent);
     expect(getRecent()).toHaveLength(6);
     expect(getRecent()[0]).toBe('g');
+  });
+});
+
+describe('numbers', () => {
+  it('returns the fallback when absent', () => expect(getNumber('missing', 7)).toBe(7));
+  it('round-trips a stored number', () => {
+    setNumber('best', 2048);
+    expect(getNumber('best')).toBe(2048);
+  });
+  it('falls back on unparseable values', () => {
+    localStorage.setItem('junk', 'not-a-number');
+    expect(getNumber('junk', 3)).toBe(3);
   });
 });

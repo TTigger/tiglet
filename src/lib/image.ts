@@ -12,6 +12,10 @@ export const FORMAT_EXT: Record<ImageFormat, string> = {
   webp: 'webp',
 };
 
+/** Reverse of FORMAT_MIME → file extension, for naming an output blob by its MIME type. */
+export const extForMime = (mime: string): string =>
+  ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' })[mime] ?? 'img';
+
 /** PNG is lossless, so a quality slider does not apply to it. */
 export const supportsQuality = (format: ImageFormat): boolean => format !== 'png';
 

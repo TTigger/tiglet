@@ -46,7 +46,7 @@ export function move(board: Board, dir: Direction): { board: Board; gained: numb
   if (dir === 'right' || dir === 'down') out = flipRows(out);
   if (dir === 'up' || dir === 'down') out = transpose(out);
 
-  const moved = JSON.stringify(out) !== JSON.stringify(board);
+  const moved = out.some((row, r) => row.some((v, c) => v !== board[r][c]));
   return { board: out, gained, moved };
 }
 

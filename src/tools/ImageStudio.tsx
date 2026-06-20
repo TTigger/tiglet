@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import Tabs from '../components/Tabs';
 import {
   computeResize,
   formatBytes,
   reductionPercent,
   renameExt,
   supportsQuality,
+  extForMime,
   FORMAT_MIME,
-  FORMAT_EXT,
   type ImageFormat,
   type ResizeMode,
 } from '../lib/image';
@@ -74,14 +75,17 @@ export default function ImageStudio() {
   const [rw, setRw] = useState(800);
   const [rh, setRh] = useState(600);
 
-  const outUrl = useRef<string | null>(null);
   const srcUrl = useRef<string | null>(null);
   const reqId = useRef(0);
 
-  useEffect(() => () => {
-    if (outUrl.current) URL.revokeObjectURL(outUrl.current);
-    if (srcUrl.current) URL.revokeObjectURL(srcUrl.current);
-  }, []);
+  useEffect(() => () => { if (srcUrl.current) URL.revokeObjectURL(srcUrl.current); }, []);
+
+  // Revoke the previous output URL only after a newer one has been committed to the
+  // DOM, so the download anchor never points at an already-revoked blob.
+  useEffect(() => {
+    const url = out?.url;
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [out?.url]);
 
   function loadFile(file: File) {
     if (!file.type.startsWith('image/')) { setError('請選擇圖片檔。'); return; }
@@ -125,11 +129,8 @@ export default function ImageStudio() {
 
         const { blob, width: ow, height: oh } = await render(src.img, width, height, mime, q);
         if (id !== reqId.current) return; // a newer request superseded this one
-        if (outUrl.current) URL.revokeObjectURL(outUrl.current);
         const url = URL.createObjectURL(blob);
-        outUrl.current = url;
-        const ext = (Object.entries(FORMAT_MIME).find(([, m]) => m === mime)?.[0] as ImageFormat | undefined);
-        const e = ext ? FORMAT_EXT[ext] : 'img';
+        const e = extForMime(mime);
         setOut({ url, size: blob.size, width: ow, height: oh, ext: e, name: renameExt(src.name, e) });
       } catch {
         if (id === reqId.current) setError('處理失敗，請換一張圖片試試。');
@@ -158,20 +159,7 @@ export default function ImageStudio() {
         </label>
       ) : (
         <>
-          <div className="flex justify-center">
-            <div className="mb-6 inline-flex flex-wrap gap-1 rounded-lg border border-edge bg-surface p-1">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  aria-pressed={tab === t.id}
-                  className={`rounded-md px-4 py-1.5 text-sm transition-colors ${tab === t.id ? 'bg-accent text-white' : 'text-muted hover:text-ink'}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="flex justify-center"><Tabs tabs={TABS} active={tab} onChange={setTab} /></div>
 
           {/* Controls */}
           <div className="mb-6 rounded-[var(--radius-card)] border border-edge bg-surface p-4">

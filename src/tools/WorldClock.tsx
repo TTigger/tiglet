@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CITIES, offsetMinutes, offsetLabel, diffMinutes, diffLabel, formatInZone } from '../lib/timezone';
+import { CITIES, offsetMinutes, offsetLabel, diffLabel, formatInZone, zonedTimeToInstant } from '../lib/timezone';
 
 const HOME = 'Asia/Taipei';
 const DEFAULT_CITIES = ['Asia/Taipei', 'Asia/Tokyo', 'Europe/London', 'America/New_York'];
@@ -38,14 +38,17 @@ export default function WorldClock() {
     for (const p of new Intl.DateTimeFormat('en-US', { timeZone: fromZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)) {
       parts[p.type] = p.value;
     }
-    const offFrom = offsetMinutes(now, fromZone);
-    const instant = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), hh, mm) - offFrom * 60000);
+    // Resolve the typed wall-clock time against the source zone's offset *at that
+    // time* (DST-aware), not the offset at the current instant.
+    const instant = zonedTimeToInstant(Number(parts.year), Number(parts.month), Number(parts.day), hh, mm, fromZone);
     const c = formatInZone(instant, toZone);
     converted = `${c.time}（${c.weekday} ${c.date}）`;
-    convDiff = diffLabel(diffMinutes(now, fromZone, toZone));
+    convDiff = diffLabel(offsetMinutes(instant, toZone) - offsetMinutes(instant, fromZone));
   }
 
   if (!now) return <div className="mx-auto max-w-2xl text-center text-muted">載入中…</div>;
+
+  const homeOffset = offsetMinutes(now, HOME);
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -53,13 +56,14 @@ export default function WorldClock() {
         <div className="grid gap-3 sm:grid-cols-2">
           {cities.map((id) => {
             const c = formatInZone(now, id);
-            const diff = diffMinutes(now, HOME, id);
+            const off = offsetMinutes(now, id); // computed once; reused for label and diff
+            const diff = off - homeOffset;
             return (
               <div key={id} className="relative rounded-[var(--radius-card)] border border-edge bg-surface p-4">
                 {cities.length > 1 && (
                   <button onClick={() => removeCity(id)} aria-label={`移除 ${labelOf(id)}`} className="absolute right-3 top-3 text-muted transition-colors hover:text-red-500">×</button>
                 )}
-                <div className="text-sm text-muted">{labelOf(id)} · {offsetLabel(offsetMinutes(now, id))}</div>
+                <div className="text-sm text-muted">{labelOf(id)} · {offsetLabel(off)}</div>
                 <div className="my-1 font-mono text-3xl tabular-nums text-ink">{c.time}</div>
                 <div className="text-sm text-muted">{c.weekday} {c.date}{id !== HOME ? ` · ${diffLabel(diff)}` : ' · 本地'}</div>
               </div>

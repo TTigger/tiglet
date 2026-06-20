@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { offsetMinutes, offsetLabel, diffMinutes, diffLabel, formatInZone } from '../timezone';
+import { offsetMinutes, offsetLabel, diffMinutes, diffLabel, formatInZone, zonedTimeToInstant } from '../timezone';
 
 // A fixed winter instant so DST behaviour is deterministic.
 const winter = new Date('2024-01-15T12:00:00Z');
@@ -41,5 +41,23 @@ describe('formatInZone', () => {
   it('renders wall-clock time for the zone', () => {
     // 12:00 UTC is 20:00 in Taipei
     expect(formatInZone(winter, 'Asia/Taipei').time).toBe('20:00');
+  });
+});
+
+describe('zonedTimeToInstant', () => {
+  it('resolves a wall-clock time back to the same time in that zone', () => {
+    const inst = zonedTimeToInstant(2024, 1, 15, 9, 0, 'Asia/Taipei');
+    expect(formatInZone(inst, 'Asia/Taipei').time).toBe('09:00');
+  });
+  it('uses the offset at the target time, not "now" (DST-aware)', () => {
+    // 2024-07-15 09:00 in New York is EDT (UTC-4) → 13:00 UTC
+    const inst = zonedTimeToInstant(2024, 7, 15, 9, 0, 'America/New_York');
+    expect(offsetMinutes(inst, 'America/New_York')).toBe(-240);
+    expect(inst.toISOString()).toBe('2024-07-15T13:00:00.000Z');
+  });
+  it('round-trips a winter (EST) New York time', () => {
+    const inst = zonedTimeToInstant(2024, 1, 15, 9, 0, 'America/New_York');
+    expect(formatInZone(inst, 'America/New_York').time).toBe('09:00');
+    expect(offsetMinutes(inst, 'America/New_York')).toBe(-300);
   });
 });

@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { newGame, step, isOpposite, type SnakeState, type Direction } from '../lib/snake';
+import { getNumber, setNumber } from '../lib/storage';
 
 const SIZE = 15;
 const TICK_MS = 130;
 const BEST_KEY = 'tiglet:snake-best';
-
-function readBest(): number {
-  if (typeof window === 'undefined') return 0;
-  try { return Number(window.localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; }
-}
 
 export default function Snake() {
   const [state, setState] = useState<SnakeState>(() => newGame(SIZE));
@@ -17,12 +13,12 @@ export default function Snake() {
   const lastDir = useRef<Direction>(state.dir);
   const pendingDir = useRef<Direction | null>(null);
 
-  useEffect(() => { setBest(readBest()); }, []);
+  useEffect(() => { setBest(getNumber(BEST_KEY)); }, []);
 
   useEffect(() => {
     if (state.score > best) {
       setBest(state.score);
-      try { window.localStorage.setItem(BEST_KEY, String(state.score)); } catch { /* ignore */ }
+      setNumber(BEST_KEY, state.score);
     }
   }, [state.score, best]);
 
