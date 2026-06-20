@@ -17,6 +17,9 @@ export const CATEGORY_ORDER: ToolCategory[] = ['計算', '遊戲', '隨機決定
 export const tools: Tool[] = [
   { id: 'calculator', title: '計算機', description: '四則運算與鍵盤輸入的基本計算機。', category: '計算', path: '/tools/calculator', icon: '🧮', status: 'available', keywords: ['calculator', '加減乘除'] },
   { id: 'text-calculator', title: '文字計算機', description: '輸入一段算式文字，立即算出結果。', category: '計算', path: '/tools/text-calculator', icon: '✍️', status: 'available', keywords: ['expression', '算式'] },
+  { id: 'converter', title: '換算器', description: '單位換算與即時匯率換算。', category: '計算', path: '/tools/converter', icon: '📐', status: 'available', keywords: ['converter', 'unit', '單位', '匯率', 'currency', '溫度', '長度'] },
+  { id: 'everyday-calc', title: '生活計算', description: 'BMI、百分比、折扣、小費分帳。', category: '計算', path: '/tools/everyday-calc', icon: '🧾', status: 'available', keywords: ['bmi', '百分比', '折扣', '小費', 'tip', 'discount', 'percent'] },
+  { id: 'world-clock', title: '世界時鐘', description: '各地即時時間、時差與時間推算。', category: '計算', path: '/tools/world-clock', icon: '🌐', status: 'available', keywords: ['timezone', '時差', '時區', 'world clock', '世界時鐘'] },
   { id: 'tic-tac-toe', title: '井字遊戲', description: '雙人對戰或挑戰電腦的經典井字棋。', category: '遊戲', path: '/tools/tic-tac-toe', icon: '⭕', status: 'available', keywords: ['tic tac toe', 'OX'] },
   { id: 'bingo', title: '賓果遊戲', description: '經典 5×5 賓果叫號機，自動偵測連線、四角與全滿。', category: '遊戲', path: '/tools/bingo', icon: '🎱', status: 'available', keywords: ['bingo', '賓果', '叫號'] },
   { id: 'wheel', title: '決定輪盤', description: '輸入選項，轉一下讓命運決定。', category: '隨機決定', path: '/tools/wheel', icon: '🎡', status: 'available', keywords: ['抽籤', 'spin'] },

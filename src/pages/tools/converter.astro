@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Converter from '../../tools/Converter.tsx';
+---
+<BaseLayout title="換算器 — Tiglet" description="長度、重量、溫度、面積等單位換算，加上即時匯率換算，一個工具搞定。" toolId="converter">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">換算器</h1>
+  <Converter client:visible />
+</BaseLayout>
