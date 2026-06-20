@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   extractPalette,
   rgbToHex,
@@ -18,7 +18,11 @@ export default function ColorExtractor() {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lastFile = useRef<File | null>(null);
+  const previewUrl = useRef<string | null>(null);
+  const pixelCache = useRef<RGB[] | null>(null); // sampled once per image; reused on count change
+  const loadId = useRef(0);
+
+  useEffect(() => () => { if (previewUrl.current) URL.revokeObjectURL(previewUrl.current); }, []);
 
   function samplePixels(img: HTMLImageElement): RGB[] {
     const canvas = canvasRef.current;
@@ -40,19 +44,23 @@ export default function ColorExtractor() {
     return pixels;
   }
 
-  function handleFile(file: File, n = count) {
+  function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
       setError('請選擇圖片檔。');
       return;
     }
     setError(null);
-    lastFile.current = file;
+    const id = ++loadId.current;
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      setPreview(url);
+      if (id !== loadId.current) { URL.revokeObjectURL(url); return; } // superseded by a newer image
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+      previewUrl.current = url;
       const pixels = samplePixels(img);
-      setPalette(extractPalette(pixels, n));
+      pixelCache.current = pixels;
+      setPreview(url);
+      setPalette(extractPalette(pixels, count));
     };
     img.onerror = () => {
       setError('無法讀取這張圖片。');
@@ -63,7 +71,8 @@ export default function ColorExtractor() {
 
   function changeCount(n: number) {
     setCount(n);
-    if (lastFile.current) handleFile(lastFile.current, n);
+    // Re-quantize the already-sampled pixels — no re-decode, no new object URL.
+    if (pixelCache.current) setPalette(extractPalette(pixelCache.current, n));
   }
 
   return (

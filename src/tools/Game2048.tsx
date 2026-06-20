@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { newGame, move, addRandomTile, hasWon, canMove, type Board, type Direction } from '../lib/game2048';
+import { getNumber, setNumber } from '../lib/storage';
 
 const BEST_KEY = 'tiglet:2048-best';
 
@@ -18,11 +19,6 @@ const TILE_STYLE: Record<number, string> = {
   2048: 'bg-[#edc22e] text-white',
 };
 
-function readBest(): number {
-  if (typeof window === 'undefined') return 0;
-  try { return Number(window.localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; }
-}
-
 export default function Game2048() {
   const [board, setBoard] = useState<Board>(() => newGame());
   const [score, setScore] = useState(0);
@@ -34,11 +30,11 @@ export default function Game2048() {
   const boardRef = useRef(board);
   boardRef.current = board;
 
-  useEffect(() => { setBest(readBest()); }, []);
+  useEffect(() => { setBest(getNumber(BEST_KEY)); }, []);
   useEffect(() => {
     if (score > best) {
       setBest(score);
-      try { window.localStorage.setItem(BEST_KEY, String(score)); } catch { /* ignore */ }
+      setNumber(BEST_KEY, score);
     }
   }, [score, best]);
 
@@ -115,11 +111,13 @@ export default function Game2048() {
       >
         {board.flatMap((row, r) =>
           row.map((v, c) => (
+            // Cell keyed by position (stable) so background colour can transition;
+            // the inner span is keyed by value so it re-mounts to replay the pop on spawn/merge.
             <div
-              key={`${r}-${c}-${v}`}
-              className={`flex aspect-square items-center justify-center rounded-lg font-bold tabular-nums transition-colors ${TILE_STYLE[v] ?? 'bg-[#3c3a32] text-white'} ${v >= 128 ? 'text-xl' : 'text-2xl'} ${v !== 0 ? 'tile-pop' : ''}`}
+              key={`${r}-${c}`}
+              className={`flex aspect-square items-center justify-center rounded-lg font-bold tabular-nums transition-colors ${TILE_STYLE[v] ?? 'bg-[#3c3a32] text-white'} ${v >= 128 ? 'text-xl' : 'text-2xl'}`}
             >
-              {v !== 0 ? v : ''}
+              {v !== 0 && <span key={v} className="tile-pop">{v}</span>}
             </div>
           )),
         )}

@@ -6,6 +6,7 @@ import {
   clampQuality,
   renameExt,
   supportsQuality,
+  extForMime,
   FORMAT_MIME,
 } from '../image';
 
@@ -58,5 +59,10 @@ describe('format metadata', () => {
   it('png does not support a quality slider', () => {
     expect(supportsQuality('png')).toBe(false);
     expect(supportsQuality('jpeg')).toBe(true);
+  });
+  it('maps mime back to an extension', () => {
+    expect(extForMime('image/webp')).toBe('webp');
+    expect(extForMime('image/jpeg')).toBe('jpg');
+    expect(extForMime('image/gif')).toBe('img');
   });
 });

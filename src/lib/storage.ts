@@ -17,6 +17,24 @@ function write(key: string, value: string[]): void {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore quota/availability */ }
 }
 
+/** Read a number from localStorage, returning `fallback` if absent/unparseable. */
+export function getNumber(key: string, fallback = 0): number {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    const n = raw === null ? NaN : Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Persist a number to localStorage, ignoring quota/availability failures. */
+export function setNumber(key: string, value: number): void {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(key, String(value)); } catch { /* ignore quota/availability */ }
+}
+
 export function getFavorites(): string[] { return read(FAV_KEY); }
 
 export function isFavorite(id: string): boolean { return read(FAV_KEY).includes(id); }

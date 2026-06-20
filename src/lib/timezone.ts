@@ -24,9 +24,21 @@ export const CITIES: CityDef[] = [
   { id: 'UTC', label: 'UTC' },
 ];
 
+// Intl.DateTimeFormat construction is the expensive part of Intl, so cache one
+// instance per (cacheKey) — the world clock re-formats the same zones every second.
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+function getFormatter(key: string, locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  let f = formatterCache.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, opts);
+    formatterCache.set(key, f);
+  }
+  return f;
+}
+
 /** UTC offset (minutes east of UTC) for a zone at a given instant, DST-aware. */
 export function offsetMinutes(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat('en-US', {
+  const dtf = getFormatter(`offset:${timeZone}`, 'en-US', {
     timeZone,
     hourCycle: 'h23',
     year: 'numeric',
@@ -47,6 +59,20 @@ export function offsetMinutes(date: Date, timeZone: string): number {
     Number(map.second),
   );
   return Math.round((asUTC - date.getTime()) / 60000);
+}
+
+/**
+ * The instant at which a given wall-clock time occurs in `timeZone`, DST-aware.
+ * Uses the zone's offset at the target time (not "now"), with one refinement so
+ * times on a DST-transition day resolve correctly.
+ */
+export function zonedTimeToInstant(year: number, month: number, day: number, hour: number, minute: number, timeZone: string): Date {
+  const guess = Date.UTC(year, month - 1, day, hour, minute);
+  const off1 = offsetMinutes(new Date(guess), timeZone);
+  let instant = guess - off1 * 60000;
+  const off2 = offsetMinutes(new Date(instant), timeZone);
+  if (off2 !== off1) instant = guess - off2 * 60000;
+  return new Date(instant);
 }
 
 /** Render an offset as "UTC+8" / "UTC-5:30". */
@@ -82,17 +108,17 @@ export interface ZoneClock {
 
 /** Format an instant as wall-clock time/date/weekday in a zone. */
 export function formatInZone(date: Date, timeZone: string, locale = 'zh-TW'): ZoneClock {
-  const time = new Intl.DateTimeFormat(locale, {
+  const time = getFormatter(`time:${locale}:${timeZone}`, locale, {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
   }).format(date);
-  const dateStr = new Intl.DateTimeFormat(locale, {
+  const dateStr = getFormatter(`date:${locale}:${timeZone}`, locale, {
     timeZone,
     month: 'long',
     day: 'numeric',
   }).format(date);
-  const weekday = new Intl.DateTimeFormat(locale, { timeZone, weekday: 'short' }).format(date);
+  const weekday = getFormatter(`wd:${locale}:${timeZone}`, locale, { timeZone, weekday: 'short' }).format(date);
   return { time, date: dateStr, weekday };
 }

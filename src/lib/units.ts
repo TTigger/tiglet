@@ -112,10 +112,12 @@ export function convert(value: number, from: string, to: string, category: UnitC
   return (value * f.toBase) / t.toBase;
 }
 
-/** Trim floating-point noise for display (up to 6 significant decimals). */
+/** Trim floating-point noise for display without truncating large integers. */
 export function formatNumber(n: number): string {
   if (!Number.isFinite(n)) return '—';
   if (n === 0) return '0';
-  const rounded = Number(n.toPrecision(7));
-  return String(rounded);
+  // Integers (e.g. 1 GB → 1073741824 bytes) must survive exactly.
+  if (Number.isInteger(n)) return String(n);
+  // Round only the fractional noise: keep up to 6 decimal places, drop trailing zeros.
+  return String(Number(n.toFixed(6)));
 }
