@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ColorExtractor from '../../tools/ColorExtractor.tsx';
+---
+<BaseLayout title="圖片取色 — Tiglet" description="上傳圖片，自動列出其中的主要色號，支援 HEX 與 RGB 複製。圖片只在瀏覽器處理，不會上傳。" toolId="color-extractor">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">圖片取色</h1>
+  <ColorExtractor client:visible />
+</BaseLayout>

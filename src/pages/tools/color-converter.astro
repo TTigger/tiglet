@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ColorConverter from '../../tools/ColorConverter.tsx';
+---
+<BaseLayout title="色彩轉換器 — Tiglet" description="在 HEX、RGB、HSL 之間即時轉換色碼，附取色器與一鍵複製。" toolId="color-converter">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">色彩轉換器</h1>
+  <ColorConverter client:visible />
+</BaseLayout>
