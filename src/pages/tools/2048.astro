@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Game2048 from '../../tools/Game2048.tsx';
+---
+<BaseLayout title="2048 — Tiglet" description="經典 2048 數字滑塊遊戲，方向鍵或滑動合併相同數字，挑戰最高分。" toolId="2048">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">2048</h1>
+  <Game2048 client:visible />
+</BaseLayout>

@@ -19,6 +19,8 @@ export const tools: Tool[] = [
   { id: 'text-calculator', title: '文字計算機', description: '輸入一段算式文字，立即算出結果。', category: '計算', path: '/tools/text-calculator', icon: '✍️', status: 'available', keywords: ['expression', '算式'] },
   { id: 'tic-tac-toe', title: '井字遊戲', description: '雙人對戰或挑戰電腦的經典井字棋。', category: '遊戲', path: '/tools/tic-tac-toe', icon: '⭕', status: 'available', keywords: ['tic tac toe', 'OX'] },
   { id: 'bingo', title: '賓果遊戲', description: '經典 5×5 賓果叫號機，自動偵測連線、四角與全滿。', category: '遊戲', path: '/tools/bingo', icon: '🎱', status: 'available', keywords: ['bingo', '賓果', '叫號'] },
+  { id: '2048', title: '2048', description: '滑動合併相同數字，挑戰 2048 方塊。', category: '遊戲', path: '/tools/2048', icon: '🔢', status: 'available', keywords: ['2048', 'puzzle', '數字'] },
+  { id: 'snake', title: '貪食蛇', description: '吃食物變長，別撞牆或咬到自己。', category: '遊戲', path: '/tools/snake', icon: '🐍', status: 'available', keywords: ['snake', '貪食蛇', '經典'] },
   { id: 'wheel', title: '決定輪盤', description: '輸入選項，轉一下讓命運決定。', category: '隨機決定', path: '/tools/wheel', icon: '🎡', status: 'available', keywords: ['抽籤', 'spin'] },
   { id: 'raffle', title: '名單抽獎', description: '匯入 Excel 名單，隨機抽出中獎者。', category: '隨機決定', path: '/tools/raffle', icon: '🎁', status: 'available', keywords: ['lottery', 'excel'] },
   { id: 'timer', title: '計時器', description: '倒數計時與碼錶。', category: '實用工具', path: '/tools/timer', icon: '⏱️', status: 'available', keywords: ['timer', 'stopwatch'] },

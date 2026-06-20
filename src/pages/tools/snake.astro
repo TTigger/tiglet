@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Snake from '../../tools/Snake.tsx';
+---
+<BaseLayout title="貪食蛇 — Tiglet" description="經典貪食蛇遊戲，吃到食物變長，別撞牆或咬到自己。方向鍵或滑動操作。" toolId="snake">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">貪食蛇</h1>
+  <Snake client:visible />
+</BaseLayout>
