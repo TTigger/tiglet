@@ -22,9 +22,10 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@astrojs/sitemap": "^3.7.0",
     "@tailwindcss/vite": "^4.1.8",
     "@testing-library/react": "^16.3.2",
     "@types/qrcode": "^1.5.6",

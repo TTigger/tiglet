@@ -30,6 +30,10 @@
   body { font-family: var(--font-sans); }
 }
 
+/* Theme toggle: show only the icon for the action available in the current theme */
+:root[data-theme="dark"] .theme-icon-light { display: none; }
+:root:not([data-theme="dark"]) .theme-icon-dark { display: none; }
+
 /* Dice: tumble while rolling, pop into place when settled */
 @keyframes die-tumble {
   0%   { transform: rotate(0deg)   translateY(0)    scale(1); }

@@ -14,7 +14,18 @@ const SETS = {
   symbols: '!@#$%^&*-_=+',
 };
 
-export function generatePassword(opts: PasswordOptions, rng: () => number = Math.random): string {
+// Cryptographically secure float in [0, 1). Falls back to Math.random only
+// where the Web Crypto API is unavailable (e.g. very old environments).
+function secureRandom(): number {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return buf[0] / 2 ** 32;
+  }
+  return Math.random();
+}
+
+export function generatePassword(opts: PasswordOptions, rng: () => number = secureRandom): string {
   const pool = [
     opts.upper ? SETS.upper : '',
     opts.lower ? SETS.lower : '',
@@ -24,7 +35,8 @@ export function generatePassword(opts: PasswordOptions, rng: () => number = Math
   if (pool === '' || opts.length <= 0) return '';
   let out = '';
   for (let i = 0; i < opts.length; i++) {
-    out += pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
+    const idx = Math.floor(rng() * pool.length);
+    out += pool[idx < pool.length ? idx : pool.length - 1];
   }
   return out;
 }
