@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TirePressure from '../../tools/TirePressure.tsx';
+---
+<BaseLayout title="胎壓建議 — Tiglet" description="依體重、胎寬、內胎或無內胎與路面條件，計算公路車前後輪建議胎壓（psi 與 bar），附 hookless 上限提醒。" toolId="tire-pressure">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">胎壓建議</h1>
+  <TirePressure client:visible />
+</BaseLayout>
