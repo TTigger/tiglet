@@ -32,6 +32,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Calculators | **Converter** | Unit conversion (length, mass, temperature, area incl. _ping_, volume, speed, data) plus live currency conversion |
 | Calculators | **Everyday Calc** | BMI (Taiwan HPA bands), percentage helpers, discounts, and tip-splitting — in tabs |
 | Calculators | **World Clock** | Live multi-city clocks with DST-aware offsets, time differences, and a from-zone → to-zone time projection |
+| Calculators | **Date Calculator** | Date differences, date projection (with month-end clamping), shareable countdowns, and workday counting |
 | Games | **Tic-Tac-Toe** | Two-player or vs. an unbeatable computer (minimax) |
 | Games | **Bingo** | Classic 5×5 bingo caller — draws balls, daub your card, auto-detects lines, corners & blackout |
 | Games | **2048** | Slide and merge tiles to reach 2048; arrow keys, WASD, or swipe, with a best-score record |
