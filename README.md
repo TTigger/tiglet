@@ -51,6 +51,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Cycling | **FTP Zones** | Coggan 7-zone power table with sweet spot, W/kg level reference, and heart-rate zones (LTHR or max-HR method) |
 | Cycling | **Tire Pressure** | Front/rear pressure suggestion (psi + bar) from weight, tire width, tubeless and surface, with a hookless-limit warning |
 | Cycling | **Stage Profile** | Upload a GPX and get a Tour-style stage profile — climbs auto-detected and categorized (HC–Cat 4), gradient stats, downloadable as PNG; parsed entirely in your browser |
+| Text | **Word Count** | Live character / CJK / word / line / paragraph counts with reading-time estimate, Chinese and English counted separately |
 
 ## Tech stack
 

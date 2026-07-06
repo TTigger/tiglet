@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WordCount from '../../tools/WordCount.tsx';
+---
+<BaseLayout title="字數統計 — Tiglet" description="即打即算的字數統計：字元、中文字數、英文單字、行數、段落與預估閱讀時間，中英文分開計算。" toolId="word-count">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">字數統計</h1>
+  <WordCount client:visible />
+</BaseLayout>
