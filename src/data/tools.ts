@@ -40,4 +40,5 @@ export const tools: Tool[] = [
   { id: 'tire-pressure', title: '胎壓建議', description: '依體重胎寬與路面，算前後輪建議胎壓。', category: '單車', path: '/tools/tire-pressure', icon: '🛞', status: 'available', keywords: ['tire', 'pressure', '胎壓', 'psi', 'bar', 'tubeless', '無內胎', '公路車', 'bike'] },
   { id: 'stage-profile', title: '賽段剖面圖', description: '上傳 GPX 生成環法風剖面圖，爬坡自動分級。', category: '單車', path: '/tools/stage-profile', icon: '⛰️', status: 'available', keywords: ['gpx', 'profile', '剖面圖', '爬坡', 'climb', 'hc', '海拔', 'strava', '路線', '公路車', 'bike'] },
   { id: 'word-count', title: '字數統計', description: '字元、中英文字數、行數與閱讀時間即時統計。', category: '文字', path: '/tools/word-count', icon: '🔢', status: 'available', keywords: ['word', 'count', '字數', '統計', 'character', '閱讀時間'] },
+  { id: 'encoder', title: '編解碼工具', description: 'Base64、URL、HTML entities 雙向轉換。', category: '文字', path: '/tools/encoder', icon: '🔐', status: 'available', keywords: ['base64', 'url', 'encode', 'decode', '編碼', '解碼', 'html', 'entities'] },
 ];
