@@ -175,6 +175,63 @@ export function detectClimbs(samples: ProfileSample[]): Climb[] {
   return climbs;
 }
 
+// 業界通用的坡度色階（cyclingcols / cycle.travel 慣例）：
+// 灰＝下坡、綠 0–4、藍 4–6、黃 6–8、橘 8–10、紅 10–15、黑 >15
+export interface GradientBand {
+  id: string;
+  label: string;
+  maxPct: number; // 不含上界；前一帶的上界即本帶下界
+  color: string;
+}
+
+export const GRADIENT_BANDS: GradientBand[] = [
+  { id: 'down', label: '下坡', maxPct: 0, color: '#A8A29E' },
+  { id: 'g0', label: '0–4%', maxPct: 4, color: '#5FA85A' },
+  { id: 'g4', label: '4–6%', maxPct: 6, color: '#3B82C4' },
+  { id: 'g6', label: '6–8%', maxPct: 8, color: '#E3B341' },
+  { id: 'g8', label: '8–10%', maxPct: 10, color: '#E8833A' },
+  { id: 'g10', label: '10–15%', maxPct: 15, color: '#D64545' },
+  { id: 'g15', label: '>15%', maxPct: Infinity, color: '#3A3A38' },
+];
+
+export function bandFor(gradientPct: number): GradientBand {
+  return GRADIENT_BANDS.find((b) => gradientPct < b.maxPct) ?? GRADIENT_BANDS[GRADIENT_BANDS.length - 1];
+}
+
+export interface GradientSegment {
+  startM: number;
+  endM: number;
+  gradientPct: number;
+  band: GradientBand;
+}
+
+// 以 windowM 為窗計算坡度並依色帶合併相鄰同色段——著色用的分段
+export function gradientSegments(samples: ProfileSample[], windowM = 200): GradientSegment[] {
+  if (samples.length < 2) return [];
+  const step = Math.max(1, Math.round(windowM / STEP_M));
+  const segs: GradientSegment[] = [];
+  for (let i = 0; i < samples.length - 1; i += step) {
+    const j = Math.min(i + step, samples.length - 1);
+    const span = samples[j].distanceM - samples[i].distanceM;
+    const grad = span > 0 ? ((samples[j].ele - samples[i].ele) / span) * 100 : 0;
+    const band = bandFor(grad);
+    const last = segs[segs.length - 1];
+    if (last && last.band.id === band.id) {
+      last.endM = samples[j].distanceM;
+    } else {
+      segs.push({ startM: samples[i].distanceM, endM: samples[j].distanceM, gradientPct: grad, band });
+    }
+  }
+  // 合併後的段重算整段平均坡度
+  for (const s of segs) {
+    const a = samples.find((p) => p.distanceM >= s.startM)!;
+    const b = [...samples].reverse().find((p) => p.distanceM <= s.endM)!;
+    const span = b.distanceM - a.distanceM;
+    s.gradientPct = span > 0 ? ((b.ele - a.ele) / span) * 100 : 0;
+  }
+  return segs;
+}
+
 export interface GradientBucket {
   label: string;
   maxPct: number;

@@ -8,8 +8,11 @@ import {
   detectClimbs,
   categorize,
   gradientBuckets,
+  gradientSegments,
+  bandFor,
   steepestKm,
   CLIMB_CATEGORIES,
+  GRADIENT_BANDS,
 } from '../gpx';
 
 // ---- 合成 GPX：沿緯度直線前進，海拔依段落坡度爬升 ----
@@ -130,6 +133,50 @@ describe('gradientBuckets', () => {
     expect(buckets[0].distanceM).toBeGreaterThan(3000);
     // 陡坡帶要存在
     expect(buckets[buckets.length - 1].distanceM).toBeGreaterThan(1000);
+  });
+});
+
+describe('bandFor (業界坡度色階)', () => {
+  it('classifies gradients into the standard bands', () => {
+    expect(bandFor(-3).id).toBe('down');
+    expect(bandFor(0).id).toBe('g0');
+    expect(bandFor(3.9).id).toBe('g0');
+    expect(bandFor(4).id).toBe('g4');
+    expect(bandFor(7.2).id).toBe('g6');
+    expect(bandFor(9.5).id).toBe('g8');
+    expect(bandFor(12).id).toBe('g10');
+    expect(bandFor(18).id).toBe('g15');
+  });
+
+  it('band metadata is ordered and complete', () => {
+    expect(GRADIENT_BANDS.map((b) => b.id)).toEqual(['down', 'g0', 'g4', 'g6', 'g8', 'g10', 'g15']);
+    expect(GRADIENT_BANDS.every((b) => /^#[0-9A-Fa-f]{6}$/.test(b.color))).toBe(true);
+  });
+});
+
+describe('gradientSegments (剖面圖著色分段)', () => {
+  it('splits the profile by gradient band and merges same-band runs', () => {
+    const profile = buildProfile(parseGpx(syntheticGpx([[3000, 1], [3000, 8], [2000, -4]])));
+    const segs = gradientSegments(profile.samples);
+    expect(segs.length).toBeGreaterThanOrEqual(3);
+    // 頭尾銜接、無縫隙
+    expect(segs[0].startM).toBe(0);
+    for (let i = 1; i < segs.length; i++) expect(segs[i].startM).toBe(segs[i - 1].endM);
+    expect(segs[segs.length - 1].endM).toBeCloseTo(profile.totalDistanceM, 0);
+    // 三種帶都要出現：緩坡綠、8% 橘、下坡灰
+    const ids = segs.map((s) => s.band.id);
+    expect(ids).toContain('g0');
+    expect(ids).toContain('g8');
+    expect(ids).toContain('down');
+  });
+
+  it('a uniform climb is dominated by its band (平滑的頭尾邊界效應允許小色邊)', () => {
+    const profile = buildProfile(parseGpx(syntheticGpx([[4000, 6]])));
+    const segs = gradientSegments(profile.samples);
+    const g6LengthM = segs.filter((s) => s.band.id === 'g6').reduce((a, s) => a + (s.endM - s.startM), 0);
+    expect(g6LengthM).toBeGreaterThan(3400); // ≥85% 覆蓋
+    const main = segs.find((s) => s.band.id === 'g6')!;
+    expect(main.gradientPct).toBeCloseTo(6, 0);
   });
 });
 
