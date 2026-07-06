@@ -98,8 +98,13 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
   const minE = Math.min(...eles);
   const maxE = Math.max(...eles);
   const range = Math.max(maxE - minE, 50); // 平路也要有一點山形
+  // 級距先以原始高低差選定（3–6 條刻度），再把繪圖域頂端「圓整」到
+  // 一條高於最高點的整數格線（含 12% 徽章空間）——Y 軸永遠包住山頂
+  const eleStep = [10, 20, 50, 100, 200, 250, 500, 1000].find((s) => range / s <= 5) ?? 1000;
+  const niceTop = Math.ceil((maxE + range * 0.12) / eleStep) * eleStep;
+  const domain = niceTop - minE;
   const x = (d: number) => ML + (d / total) * PW;
-  const y = (e: number) => MT + (1 - (e - minE) / (range * 1.15)) * PH;
+  const y = (e: number) => MT + (1 - (e - minE) / domain) * PH;
   const baseY = MT + PH;
 
   const linePath = samples.map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.distanceM).toFixed(1)},${y(s.ele).toFixed(1)}`).join(' ');
@@ -119,10 +124,11 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
   for (let km = step; km < totalKm; km += step) ticks.push(km);
   const ascent = totalAscentM(samples);
 
-  // Y 軸海拔刻度：挑一個讓刻度數落在 3–6 條的整數級距
-  const eleStep = [10, 20, 50, 100, 200, 250, 500, 1000].find((s) => range / s <= 5) ?? 1000;
+  // Y 軸海拔刻度：畫到圓整後的頂界；貼著最高點標線的刻度跳過以免標籤打架
   const eleTicks: number[] = [];
-  for (let e = Math.ceil(minE / eleStep) * eleStep; e <= maxE; e += eleStep) eleTicks.push(e);
+  for (let e = Math.ceil(minE / eleStep) * eleStep; e <= niceTop; e += eleStep) {
+    if (Math.abs(e - maxE) >= eleStep * 0.25) eleTicks.push(e);
+  }
 
   return (
     <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="賽段剖面圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
@@ -163,6 +169,12 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
       ))}
       <path d={linePath} fill="none" stroke={theme.ink} strokeWidth={1.5} />
       <line x1={ML} y1={baseY} x2={W - MR} y2={baseY} stroke={theme.ink} strokeWidth={1} />
+
+      {/* 最高點標線：實際最高海拔的橫貫虛線＋左緣粗體標籤（對齊細部圖「坡頂一定標」） */}
+      <line x1={ML} y1={y(maxE)} x2={W - MR} y2={y(maxE)} stroke={theme.accent} strokeWidth={1} strokeDasharray="4 4" opacity={0.55} />
+      <text x={ML - 6} y={y(maxE) + 3} fill={theme.accent} fontSize={10} fontWeight={700} textAnchor="end" fontFamily="system-ui, sans-serif">
+        {Math.round(maxE)}m
+      </text>
 
       {/* 公里刻度 */}
       {ticks.map((km) => (
