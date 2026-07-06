@@ -35,6 +35,10 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await expect(page.getByText('總爬升', { exact: true })).toBeVisible(); // 統計卡（SVG 副標裡也有這串字）
   // Y 軸海拔刻度（100→500m 的爬升 → 100m 級距）
   await expect(page.getByText('400m', { exact: true })).toBeVisible();
+  // 圓整頂界：Y 軸必須有一條高於最高點的格線（≈600m）
+  await expect(page.getByText('600m', { exact: true })).toBeVisible();
+  // 最高點標線：實際最高海拔（平滑後 ≈499m）以粗體標在左緣
+  await expect(page.getByText(/^(49\d|50\d)m$/)).toBeVisible();
   // 坡度色階圖例
   await expect(page.getByText('10–15%', { exact: true })).toBeVisible();
 
