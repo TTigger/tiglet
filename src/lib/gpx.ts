@@ -265,6 +265,36 @@ export function eleAtM(samples: ProfileSample[], distanceM: number): number {
   return a.ele + t * (b.ele - a.ele);
 }
 
+// 單一爬坡的每公里方塊（Alpe d'Huez 式細部圖）：
+// 整公里切塊、尾塊補滿到坡頂，每塊帶平均坡度、色帶與頭尾海拔
+export interface KmBlock {
+  startM: number;
+  endM: number;
+  startEle: number;
+  endEle: number;
+  gradientPct: number;
+  band: GradientBand;
+}
+
+export function climbKmBlocks(samples: ProfileSample[], climb: Climb): KmBlock[] {
+  const blocks: KmBlock[] = [];
+  for (let m = climb.startM; m < climb.endM; m += 1000) {
+    const end = Math.min(m + 1000, climb.endM);
+    const startEle = eleAtM(samples, m);
+    const endEle = eleAtM(samples, end);
+    const span = end - m;
+    blocks.push({
+      startM: m,
+      endM: end,
+      startEle,
+      endEle,
+      gradientPct: span > 0 ? ((endEle - startEle) / span) * 100 : 0,
+      band: bandFor(span > 0 ? ((endEle - startEle) / span) * 100 : 0),
+    });
+  }
+  return blocks;
+}
+
 export function steepestKm(samples: ProfileSample[]): { startM: number; gradientPct: number } {
   const window = Math.round(1000 / STEP_M);
   let best = { startM: 0, gradientPct: 0 };
