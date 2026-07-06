@@ -41,6 +41,12 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   // 幫爬坡命名 → 名字（含坡頂海拔）畫進 SVG
   await page.getByLabel('爬坡 1 名稱').fill('測試坡');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/測試坡（海拔 \d+m）/); // 平滑後坡頂 ≈499m
+
+  // 加一個補給站地標 → 斜排標注畫進 SVG
+  await page.getByRole('button', { name: '＋ 新增地標' }).click();
+  await page.getByLabel('地標 1 公里數').fill('6');
+  await page.getByLabel('地標 1 名稱').fill('西寶補給站');
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/西寶補給站 \d+m/);
   // 8km@5% → 分數 ~40000 → 二級坡
   await expect(page.getByText('2 級')).toBeVisible();
 

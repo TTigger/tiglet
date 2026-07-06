@@ -10,6 +10,7 @@ import {
   gradientBuckets,
   gradientSegments,
   bandFor,
+  eleAtM,
   steepestKm,
   CLIMB_CATEGORIES,
   GRADIENT_BANDS,
@@ -177,6 +178,24 @@ describe('gradientSegments (剖面圖著色分段)', () => {
     expect(g6LengthM).toBeGreaterThan(3400); // ≥85% 覆蓋
     const main = segs.find((s) => s.band.id === 'g6')!;
     expect(main.gradientPct).toBeCloseTo(6, 0);
+  });
+});
+
+describe('eleAtM (地標海拔內插)', () => {
+  it('interpolates elevation at any distance', () => {
+    const profile = buildProfile(parseGpx(syntheticGpx([[4000, 5]])));
+    // 4km @5%：起點 100m，2km 處 ≈ 200m（遠離平滑邊界，幾何值可直接對）
+    expect(eleAtM(profile.samples, 2000)).toBeCloseTo(200, 0);
+    // 樣本之間（1975m 與 2025m 的中點）要落在兩者之間
+    const mid = eleAtM(profile.samples, 2025);
+    expect(mid).toBeGreaterThan(eleAtM(profile.samples, 2000));
+    expect(mid).toBeLessThan(eleAtM(profile.samples, 2050));
+  });
+
+  it('clamps out-of-range distances to the ends', () => {
+    const profile = buildProfile(parseGpx(syntheticGpx([[1000, 0]])));
+    expect(eleAtM(profile.samples, -50)).toBeCloseTo(profile.samples[0].ele, 5);
+    expect(eleAtM(profile.samples, 99999)).toBeCloseTo(profile.samples[profile.samples.length - 1].ele, 5);
   });
 });
 

@@ -253,6 +253,18 @@ export function gradientBuckets(samples: ProfileSample[]): GradientBucket[] {
   return buckets;
 }
 
+// 任意距離處的海拔（線性內插，越界夾住）——地標標注用
+export function eleAtM(samples: ProfileSample[], distanceM: number): number {
+  if (distanceM <= samples[0].distanceM) return samples[0].ele;
+  const last = samples[samples.length - 1];
+  if (distanceM >= last.distanceM) return last.ele;
+  const i = samples.findIndex((s) => s.distanceM >= distanceM);
+  const a = samples[i - 1];
+  const b = samples[i];
+  const t = (distanceM - a.distanceM) / (b.distanceM - a.distanceM);
+  return a.ele + t * (b.ele - a.ele);
+}
+
 export function steepestKm(samples: ProfileSample[]): { startM: number; gradientPct: number } {
   const window = Math.round(1000 / STEP_M);
   let best = { startM: 0, gradientPct: 0 };
