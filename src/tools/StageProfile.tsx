@@ -9,6 +9,7 @@ import {
   gradientBuckets,
   gradientSegments,
   eleAtM,
+  climbKmBlocks,
   steepestKm,
   CLIMB_CATEGORIES,
   GRADIENT_BANDS,
@@ -42,6 +43,34 @@ const PH = H - MT - MB;
 
 function catColor(id: string | null): string {
   return CLIMB_CATEGORIES.find((c) => c.id === id)?.color ?? '#8A8A82';
+}
+
+// SVG → 2x PNG 下載（主圖與爬坡細部圖共用）
+function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string) {
+  const xml = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((png) => {
+      if (!png) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(png);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  };
+  img.src = url;
 }
 
 function tickStepKm(totalKm: number): number {
@@ -192,6 +221,75 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
   );
 }
 
+// 單一爬坡細部圖：每公里一塊的階梯圖，塊內印坡度、邊界標海拔
+const DW = 840;
+const DH = 300;
+const DML = 40;
+const DMR = 24;
+const DMT = 56;
+const DMB = 34;
+
+function ClimbDetail({ profile, climb, name }: { profile: Profile; climb: Climb; name: string }) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const blocks = climbKmBlocks(profile.samples, climb);
+  const minE = blocks[0].startEle;
+  const maxE = Math.max(...blocks.map((b) => b.endEle), minE + 30);
+  const pw = DW - DML - DMR;
+  const ph = DH - DMT - DMB;
+  const x = (m: number) => DML + ((m - climb.startM) / climb.lengthM) * pw;
+  const y = (e: number) => DMT + (1 - (e - minE) / ((maxE - minE) * 1.12)) * ph;
+  const baseY = DMT + ph;
+  const labelEvery = blocks.length > 14 ? 2 : 1;
+  const displayName = name.trim() || '爬坡細部圖';
+
+  return (
+    <div className="space-y-2">
+      <svg ref={svgRef} viewBox={`0 0 ${DW} ${DH}`} role="img" aria-label="爬坡細部圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: C.bg }}>
+        <rect x={0} y={0} width={DW} height={DH} fill={C.bg} />
+        <text x={DML} y={26} fill={C.ink} fontSize={18} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{displayName}</text>
+        <text x={DML} y={44} fill="#6B6A63" fontSize={11} fontFamily="system-ui, sans-serif">
+          {(climb.lengthM / 1000).toFixed(1)} km ・ 爬升 {Math.round(climb.gainM)} m ・ 平均 {climb.avgGradientPct.toFixed(1)}%
+          {climb.category ? ` ・ ${climb.category === 'HC' ? 'HC' : `${climb.category} 級`}坡` : ''}
+        </text>
+        <text x={DW - DMR} y={26} fill={C.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
+
+        {blocks.map((b, i) => {
+          const x1 = x(b.startM);
+          const x2 = x(b.endM);
+          const wide = x2 - x1 > 42;
+          return (
+            <g key={i} fontFamily="system-ui, sans-serif">
+              <polygon
+                points={`${x1},${y(b.startEle)} ${x2},${y(b.endEle)} ${x2},${baseY} ${x1},${baseY}`}
+                fill={b.band.color}
+                stroke={C.bg}
+                strokeWidth={1.5}
+              />
+              {/* 塊內坡度 */}
+              <text x={(x1 + x2) / 2} y={baseY - 8} fill="#FFFFFF" fontSize={wide ? 12 : 9} fontWeight={700} textAnchor="middle">
+                {b.gradientPct.toFixed(1)}%
+              </text>
+              {/* 邊界海拔（坡頂一定標） */}
+              {(i % labelEvery === 0 || i === blocks.length - 1) && (
+                <text x={x2} y={y(b.endEle) - 6} fill={C.ink} fontSize={9} textAnchor="middle">{Math.round(b.endEle)}m</text>
+              )}
+              {/* 底部相對公里數 */}
+              <text x={x1} y={baseY + 14} fill="#6B6A63" fontSize={9} textAnchor="middle">{((b.startM - climb.startM) / 1000).toFixed(0)}k</text>
+            </g>
+          );
+        })}
+        <line x1={DML} y1={baseY} x2={DW - DMR} y2={baseY} stroke={C.ink} strokeWidth={1} />
+      </svg>
+      <button
+        onClick={() => svgRef.current && downloadSvgAsPng(svgRef.current, DW, DH, `${displayName}.png`)}
+        className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
+      >
+        下載細部圖 PNG
+      </button>
+    </div>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-edge bg-surface px-3 py-2 text-center">
@@ -214,6 +312,7 @@ export default function StageProfile() {
   const [climbs, setClimbs] = useState<Climb[]>([]);
   const [climbNames, setClimbNames] = useState<string[]>([]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
+  const [detailIdx, setDetailIdx] = useState<number | null>(null);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -231,6 +330,7 @@ export default function StageProfile() {
       setClimbs(cs);
       setClimbNames(Array(cs.length).fill(''));
       setWaypoints([]);
+      setDetailIdx(null);
       setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
       setProfile(null);
@@ -241,32 +341,7 @@ export default function StageProfile() {
   }
 
   function downloadPng() {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const xml = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const scale = 2;
-      const canvas = document.createElement('canvas');
-      canvas.width = W * scale;
-      canvas.height = H * scale;
-      const ctx = canvas.getContext('2d')!;
-      ctx.fillStyle = C.bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((png) => {
-        if (!png) return;
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(png);
-        a.download = `${title.trim() || 'stage-profile'}.png`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      }, 'image/png');
-    };
-    img.src = url;
+    if (svgRef.current) downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`);
   }
 
   const stats = profile
@@ -332,6 +407,7 @@ export default function StageProfile() {
                     <th className="px-3 py-2 text-right font-normal text-muted">長度</th>
                     <th className="px-3 py-2 text-right font-normal text-muted">爬升</th>
                     <th className="px-3 py-2 text-right font-normal text-muted">平均坡度</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">細部</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -355,11 +431,24 @@ export default function StageProfile() {
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-ink">{(c.lengthM / 1000).toFixed(1)} km</td>
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-ink">{Math.round(c.gainM)} m</td>
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-ink">{c.avgGradientPct.toFixed(1)}%</td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => setDetailIdx(detailIdx === i ? null : i)}
+                          aria-label={`爬坡 ${i + 1} 細部圖`}
+                          className={`text-sm ${detailIdx === i ? 'text-accent' : 'text-muted hover:text-accent'}`}
+                        >
+                          {detailIdx === i ? '收合 ▴' : '細部圖 ▾'}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
+
+          {detailIdx !== null && climbs[detailIdx] && (
+            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} />
           )}
 
           <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">

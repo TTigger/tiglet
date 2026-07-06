@@ -11,6 +11,7 @@ import {
   gradientSegments,
   bandFor,
   eleAtM,
+  climbKmBlocks,
   steepestKm,
   CLIMB_CATEGORIES,
   GRADIENT_BANDS,
@@ -178,6 +179,33 @@ describe('gradientSegments (剖面圖著色分段)', () => {
     expect(g6LengthM).toBeGreaterThan(3400); // ≥85% 覆蓋
     const main = segs.find((s) => s.band.id === 'g6')!;
     expect(main.gradientPct).toBeCloseTo(6, 0);
+  });
+});
+
+describe('climbKmBlocks (每公里坡度方塊)', () => {
+  it('cuts a climb into 1km blocks with per-block gradient and band', () => {
+    // 2km 平路 + 3.5km @7%
+    const profile = buildProfile(parseGpx(syntheticGpx([[2000, 0], [3500, 7]])));
+    const climb = detectClimbs(profile.samples)[0];
+    const blocks = climbKmBlocks(profile.samples, climb);
+    expect(blocks.length).toBe(4); // 3 個整公里 + 1 個 0.5km 尾塊
+    expect(blocks[1].gradientPct).toBeCloseTo(7, 0);
+    expect(blocks[1].band.id).toBe('g6');
+    // 無縫銜接
+    for (let i = 1; i < blocks.length; i++) expect(blocks[i].startM).toBe(blocks[i - 1].endM);
+    expect(blocks[0].startM).toBeCloseTo(climb.startM, 5);
+    expect(blocks[blocks.length - 1].endM).toBeCloseTo(climb.endM, 5);
+    // 每塊帶頭尾海拔（畫階梯用）
+    expect(blocks[1].endEle).toBeGreaterThan(blocks[1].startEle);
+  });
+
+  it('a short climb under 1km yields a single block', () => {
+    const profile = buildProfile(parseGpx(syntheticGpx([[900, 6]])));
+    const climbs = detectClimbs(profile.samples);
+    if (climbs.length) {
+      const blocks = climbKmBlocks(profile.samples, climbs[0]);
+      expect(blocks).toHaveLength(1);
+    }
   });
 });
 
