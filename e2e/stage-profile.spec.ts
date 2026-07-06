@@ -57,6 +57,12 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   // 8km@5% → 分數 ~40000 → 二級坡（表格徽章；細部圖副標也含「2 級坡」故用 exact）
   await expect(page.getByText('2 級', { exact: true })).toBeVisible();
 
+  // 出圖主題切換 → SVG 底色跟著換（環義粉 #FFF6FA）
+  await page.getByRole('button', { name: '環義粉' }).click();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#FFF6FA');
+  await page.getByRole('button', { name: 'Tiglet 暖橘' }).click();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#FAF9F5');
+
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '下載 PNG 圖片' }).click();
   const download = await downloadPromise;
