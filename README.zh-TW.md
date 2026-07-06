@@ -55,6 +55,7 @@
 | 文字 | **編解碼工具** | Base64（UTF-8 安全）、URL 百分比編碼、HTML entities 雙向轉換，一鍵複製 |
 | 文字 | **文字比對** | 行級 LCS 差異比對加行內字元級高亮——零依賴 |
 | 文字 | **JSON 工具** | 格式化、壓縮、驗證（自製掃描器定位錯誤行列）、可摺疊樹狀視圖，點節點複製 JSON path |
+| 文字 | **Markdown 工具** | 貼上或上傳 Markdown：即時預覽（DOMPurify 清洗）、可點擊跳轉的標題結構樹、文件統計 |
 
 ## 技術棧
 
@@ -66,7 +67,7 @@
 - **[@astrojs/sitemap](https://docs.astro.build/en/guides/integrations-guide/sitemap/)**——建置時生成 sitemap
 - **[@vite-pwa/astro](https://vite-pwa-org.netlify.app)**——manifest + service worker
 - **Web 平台 API**——圖片/色彩工具用 Canvas、密碼生成用 Web Crypto、時區用 `Intl`
-- 前端 **SheetJS**（`xlsx`）與 **`qrcode`**，皆為動態載入
+- 前端 **SheetJS**（`xlsx`）、**`qrcode`** 與 **`marked` + `DOMPurify`**（Markdown 預覽），皆為動態載入
 
 ## 開始使用
 

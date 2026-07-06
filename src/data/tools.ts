@@ -43,4 +43,5 @@ export const tools: Tool[] = [
   { id: 'encoder', title: '編解碼工具', description: 'Base64、URL、HTML entities 雙向轉換。', category: '文字', path: '/tools/encoder', icon: '🔐', status: 'available', keywords: ['base64', 'url', 'encode', 'decode', '編碼', '解碼', 'html', 'entities'] },
   { id: 'text-diff', title: '文字比對', description: '兩段文字的差異高亮，行級加字元級。', category: '文字', path: '/tools/text-diff', icon: '🔍', status: 'available', keywords: ['diff', 'compare', '比對', '差異', '比較'] },
   { id: 'json-formatter', title: 'JSON 工具', description: '格式化、壓縮、驗證與樹狀視圖。', category: '文字', path: '/tools/json-formatter', icon: '🧩', status: 'available', keywords: ['json', 'format', 'formatter', '格式化', 'validate', 'tree', 'path'] },
+  { id: 'markdown-studio', title: 'Markdown 工具', description: '即時預覽、標題結構樹與文件統計。', category: '文字', path: '/tools/markdown-studio', icon: '📝', status: 'available', keywords: ['markdown', 'md', 'preview', '預覽', 'outline', '大綱', '結構'] },
 ];
