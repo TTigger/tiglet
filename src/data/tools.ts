@@ -1,4 +1,4 @@
-export type ToolCategory = '計算' | '遊戲' | '隨機決定' | '實用工具';
+export type ToolCategory = '計算' | '遊戲' | '隨機決定' | '實用工具' | '單車';
 export type ToolStatus = 'available' | 'soon';
 
 export interface Tool {
@@ -12,7 +12,7 @@ export interface Tool {
   keywords?: string[];
 }
 
-export const CATEGORY_ORDER: ToolCategory[] = ['計算', '遊戲', '隨機決定', '實用工具'];
+export const CATEGORY_ORDER: ToolCategory[] = ['計算', '遊戲', '隨機決定', '實用工具', '單車'];
 
 export const tools: Tool[] = [
   { id: 'calculator', title: '計算機', description: '四則運算與鍵盤輸入的基本計算機。', category: '計算', path: '/tools/calculator', icon: '🧮', status: 'available', keywords: ['calculator', '加減乘除'] },
@@ -33,4 +33,5 @@ export const tools: Tool[] = [
   { id: 'color-converter', title: '色彩轉換器', description: '在 HEX、RGB、HSL 之間即時轉換色碼。', category: '實用工具', path: '/tools/color-converter', icon: '🎨', status: 'available', keywords: ['color', 'hex', 'rgb', 'hsl', '色碼', '顏色'] },
   { id: 'color-extractor', title: '圖片取色', description: '上傳圖片，自動列出主要色號並複製。', category: '實用工具', path: '/tools/color-extractor', icon: '🌈', status: 'available', keywords: ['color', 'palette', '取色', '色票', '調色盤'] },
   { id: 'image-studio', title: '圖片工具', description: '壓縮、縮放、格式轉換，附前後對比。', category: '實用工具', path: '/tools/image-studio', icon: '🖼️', status: 'available', keywords: ['image', '壓縮', '縮放', '轉檔', 'compress', 'resize', 'convert', 'webp'] },
+  { id: 'gear-calculator', title: '齒比計算器', description: '齒比表、速度對照、A/B 傳動比較與容量檢查。', category: '單車', path: '/tools/gear-calculator', icon: '⚙️', status: 'available', keywords: ['gear', 'ratio', '齒比', '公路車', 'bike', '飛輪', '大盤', 'cassette', 'cadence', '迴轉速'] },
 ];
