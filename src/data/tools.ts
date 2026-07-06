@@ -35,4 +35,5 @@ export const tools: Tool[] = [
   { id: 'image-studio', title: '圖片工具', description: '壓縮、縮放、格式轉換，附前後對比。', category: '實用工具', path: '/tools/image-studio', icon: '🖼️', status: 'available', keywords: ['image', '壓縮', '縮放', '轉檔', 'compress', 'resize', 'convert', 'webp'] },
   { id: 'gear-calculator', title: '齒比計算器', description: '齒比表、速度對照、A/B 傳動比較與容量檢查。', category: '單車', path: '/tools/gear-calculator', icon: '⚙️', status: 'available', keywords: ['gear', 'ratio', '齒比', '公路車', 'bike', '飛輪', '大盤', 'cassette', 'cadence', '迴轉速'] },
   { id: 'ride-fuel', title: '騎乘熱量', description: '碼錶 kJ 換算大卡與食物，附補給與補水建議。', category: '單車', path: '/tools/ride-fuel', icon: '🍌', status: 'available', keywords: ['kj', 'kcal', '大卡', '熱量', '補給', 'fuel', 'calories', '公路車', 'bike', '排汗'] },
+  { id: 'ftp-zones', title: 'FTP 訓練區間', description: 'Coggan 功率七區、W/kg 等級與心率區間。', category: '單車', path: '/tools/ftp-zones', icon: '⚡', status: 'available', keywords: ['ftp', 'zone', '功率', '訓練', 'watt', 'w/kg', '心率', 'lthr', '公路車', 'bike'] },
 ];
