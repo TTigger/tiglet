@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FtpZones from '../../tools/FtpZones.tsx';
+---
+<BaseLayout title="FTP 訓練區間 — Tiglet" description="輸入 FTP 產生 Coggan 功率七區與 Sweet Spot，附 W/kg 推力比等級與心率五區（LTHR 或最大心率法）。" toolId="ftp-zones">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">FTP 訓練區間</h1>
+  <FtpZones client:visible />
+</BaseLayout>
