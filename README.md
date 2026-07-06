@@ -54,6 +54,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Text | **Word Count** | Live character / CJK / word / line / paragraph counts with reading-time estimate, Chinese and English counted separately |
 | Text | **Encoder** | Two-way Base64 (UTF-8 safe), URL percent-encoding, and HTML entities conversion with one-tap copy |
 | Text | **Text Diff** | Line-level LCS diff with inline character highlighting — zero dependencies |
+| Text | **JSON Tool** | Format, minify, validate (errors located to line/column by a hand-rolled scanner), and a collapsible tree view with click-to-copy JSON paths |
 
 ## Tech stack
 

@@ -42,4 +42,5 @@ export const tools: Tool[] = [
   { id: 'word-count', title: '字數統計', description: '字元、中英文字數、行數與閱讀時間即時統計。', category: '文字', path: '/tools/word-count', icon: '🔢', status: 'available', keywords: ['word', 'count', '字數', '統計', 'character', '閱讀時間'] },
   { id: 'encoder', title: '編解碼工具', description: 'Base64、URL、HTML entities 雙向轉換。', category: '文字', path: '/tools/encoder', icon: '🔐', status: 'available', keywords: ['base64', 'url', 'encode', 'decode', '編碼', '解碼', 'html', 'entities'] },
   { id: 'text-diff', title: '文字比對', description: '兩段文字的差異高亮，行級加字元級。', category: '文字', path: '/tools/text-diff', icon: '🔍', status: 'available', keywords: ['diff', 'compare', '比對', '差異', '比較'] },
+  { id: 'json-formatter', title: 'JSON 工具', description: '格式化、壓縮、驗證與樹狀視圖。', category: '文字', path: '/tools/json-formatter', icon: '🧩', status: 'available', keywords: ['json', 'format', 'formatter', '格式化', 'validate', 'tree', 'path'] },
 ];
