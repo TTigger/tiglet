@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { waitForIslands } from './helpers';
 
 test('匯入 CSV 名單、挑選欄位並完成一輪抽獎', async ({ page }) => {
   await page.goto('/tools/raffle');
+  await waitForIslands(page);
 
-  const csv = '﻿姓名,部門\n王小明,行銷\n陳大文,工程\n林美麗,設計\n';
+  // Excel 匯出的 CSV 開頭帶 UTF-8 BOM（U+FEFF），顯式組出來讓這個涵蓋範圍看得見
+  const BOM = String.fromCharCode(0xfeff);
+  const csv = BOM + '姓名,部門\n王小明,行銷\n陳大文,工程\n林美麗,設計\n';
   await page.locator('input[type="file"]').setInputFiles({
     name: 'names.csv',
     mimeType: 'text/csv',

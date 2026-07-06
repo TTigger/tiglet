@@ -68,8 +68,8 @@ npm run build    # build static output to dist/
 npm run preview  # preview the production build
 ```
 
-Every push and pull request runs the unit tests, the production build, and the
-E2E suite in GitHub Actions (`.github/workflows/ci.yml`).
+Every push to master and every pull request runs the unit tests, the production
+build, and the E2E suite in GitHub Actions (`.github/workflows/ci.yml`).
 
 Requires Node 22.12+.
 
