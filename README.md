@@ -49,7 +49,8 @@ fetches public exchange rates; see [Privacy](#privacy).)
 - **[Astro](https://astro.build)** — static output, near-zero JS on the home page
 - **React** — one interactive island per tool, hydrated lazily (`client:visible` / `client:idle`)
 - **Tailwind CSS v4** — design tokens via `@tailwindcss/vite`
-- **Vitest** — unit tests for every tool's core logic (220+ specs)
+- **Vitest** — unit tests for every tool's core logic (230+ specs)
+- **Playwright** — E2E smoke tests for key flows (deep links, Excel/CSV import, ⌘K palette), run in CI
 - **[@astrojs/sitemap](https://docs.astro.build/en/guides/integrations-guide/sitemap/)** — sitemap generated at build time
 - **[@vite-pwa/astro](https://vite-pwa-org.netlify.app)** — manifest + service worker
 - **Web platform APIs** — Canvas for the image/color tools, Web Crypto for password generation,
@@ -62,9 +63,13 @@ fetches public exchange rates; see [Privacy](#privacy).)
 npm install      # install dependencies
 npm run dev      # start the dev server
 npm test         # run the unit tests
+npm run test:e2e # run the Playwright E2E tests (builds + previews the site)
 npm run build    # build static output to dist/
 npm run preview  # preview the production build
 ```
+
+Every push and pull request runs the unit tests, the production build, and the
+E2E suite in GitHub Actions (`.github/workflows/ci.yml`).
 
 Requires Node 22.12+.
 
