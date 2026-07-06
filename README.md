@@ -1,5 +1,7 @@
 # Tiglet
 
+**English** | [繁體中文](README.zh-TW.md)
+
 A clean, no-login collection of small browser tools — and a personal portfolio piece.
 Built with Astro + React islands + Tailwind CSS v4, deployed on Vercel.
 
