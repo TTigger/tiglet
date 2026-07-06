@@ -35,6 +35,12 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await expect(page.getByText('總爬升', { exact: true })).toBeVisible(); // 統計卡（SVG 副標裡也有這串字）
   // Y 軸海拔刻度（100→500m 的爬升 → 100m 級距）
   await expect(page.getByText('400m', { exact: true })).toBeVisible();
+  // 坡度色階圖例
+  await expect(page.getByText('10–15%', { exact: true })).toBeVisible();
+
+  // 幫爬坡命名 → 名字（含坡頂海拔）畫進 SVG
+  await page.getByLabel('爬坡 1 名稱').fill('測試坡');
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/測試坡（海拔 \d+m）/); // 平滑後坡頂 ≈499m
   // 8km@5% → 分數 ~40000 → 二級坡
   await expect(page.getByText('2 級')).toBeVisible();
 

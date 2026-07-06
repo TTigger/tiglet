@@ -7,8 +7,10 @@ import {
   totalAscentM,
   detectClimbs,
   gradientBuckets,
+  gradientSegments,
   steepestKm,
   CLIMB_CATEGORIES,
+  GRADIENT_BANDS,
   type Profile,
   type Climb,
 } from '../lib/gpx';
@@ -43,7 +45,7 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; climbs: Climb[]; title: string; svgRef: React.RefObject<SVGSVGElement | null> }) {
+function ProfileSvg({ profile, climbs, climbNames, title, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; title: string; svgRef: React.RefObject<SVGSVGElement | null> }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
   const eles = samples.map((s) => s.ele);
@@ -55,13 +57,14 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
   const baseY = MT + PH;
 
   const linePath = samples.map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.distanceM).toFixed(1)},${y(s.ele).toFixed(1)}`).join(' ');
-  const areaPath = `${linePath} L${x(total).toFixed(1)},${baseY} L${ML},${baseY} Z`;
 
-  const climbArea = (c: Climb) => {
-    const seg = samples.filter((s) => s.distanceM >= c.startM && s.distanceM <= c.endM);
+  // 山體依坡度色帶切片上色（環賽剖面圖慣例：顏色＝多陡，分級只留在徽章）
+  const segments = gradientSegments(samples);
+  const sliceArea = (startM: number, endM: number) => {
+    const seg = samples.filter((s) => s.distanceM >= startM && s.distanceM <= endM);
     if (seg.length < 2) return '';
     const line = seg.map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.distanceM).toFixed(1)},${y(s.ele).toFixed(1)}`).join(' ');
-    return `${line} L${x(c.endM).toFixed(1)},${baseY} L${x(c.startM).toFixed(1)},${baseY} Z`;
+    return `${line} L${x(endM).toFixed(1)},${baseY} L${x(startM).toFixed(1)},${baseY} Z`;
   };
 
   const totalKm = total / 1000;
@@ -85,6 +88,19 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
       </text>
       <text x={W - MR} y={30} fill={C.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
+      {/* 坡度色階圖例（右上，會一起輸出進 PNG） */}
+      <g fontFamily="system-ui, sans-serif" fontSize={9}>
+        {GRADIENT_BANDS.map((b, i) => {
+          const bx = W - MR - (GRADIENT_BANDS.length - i) * 52;
+          return (
+            <g key={b.id}>
+              <rect x={bx} y={42} width={9} height={9} rx={2} fill={b.color} />
+              <text x={bx + 12} y={50} fill="#6B6A63">{b.label}</text>
+            </g>
+          );
+        })}
+      </g>
+
       {/* Y 軸海拔刻度與網格線（畫在剖面下層） */}
       {eleTicks.map((e) => (
         <g key={e}>
@@ -95,13 +111,11 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
         </g>
       ))}
 
-      {/* 主剖面 */}
-      <path d={areaPath} fill={C.fill} opacity={0.92} />
-      {/* 爬坡段上色 */}
-      {climbs.map((c, i) => (
-        <path key={i} d={climbArea(c)} fill={catColor(c.category)} opacity={0.45} />
+      {/* 主剖面：依坡度色帶切片 */}
+      {segments.map((s, i) => (
+        <path key={i} d={sliceArea(s.startM, s.endM)} fill={s.band.color} opacity={0.85} />
       ))}
-      <path d={linePath} fill="none" stroke={C.accent} strokeWidth={2} />
+      <path d={linePath} fill="none" stroke={C.ink} strokeWidth={1.5} />
       <line x1={ML} y1={baseY} x2={W - MR} y2={baseY} stroke={C.ink} strokeWidth={1} />
 
       {/* 公里刻度 */}
@@ -120,12 +134,13 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
         <text x={x(total)} y={baseY + 18} fill={C.ink} textAnchor="end" fontWeight={600}>終點</text>
       </g>
 
-      {/* 爬坡徽章（山頂） */}
+      {/* 爬坡徽章（山頂），有命名時把名字畫進圖裡 */}
       {climbs.map((c, i) => {
         const cx = x(c.endM);
         const cy = y(c.topEle);
         const color = catColor(c.category);
         const label = c.category ?? '坡';
+        const name = climbNames[i]?.trim();
         return (
           <g key={i} fontFamily="system-ui, sans-serif">
             <line x1={cx} y1={cy} x2={cx} y2={cy - 26} stroke={color} strokeWidth={1.5} />
@@ -134,6 +149,11 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
             <text x={cx} y={cy - 52} fill={C.ink} fontSize={10} textAnchor="middle">
               {(c.lengthM / 1000).toFixed(1)}km @ {c.avgGradientPct.toFixed(1)}%
             </text>
+            {name && (
+              <text x={cx} y={cy - 64} fill={C.ink} fontSize={12} fontWeight={700} textAnchor="middle">
+                {name}（海拔 {Math.round(c.topEle)}m）
+              </text>
+            )}
           </g>
         );
       })}
@@ -161,6 +181,7 @@ const EXPORT_GUIDES: Array<{ app: string; steps: string }> = [
 export default function StageProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [climbs, setClimbs] = useState<Climb[]>([]);
+  const [climbNames, setClimbNames] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -173,8 +194,10 @@ export default function StageProfile() {
       const xml = await file.text();
       const points = parseGpx(xml);
       const p = buildProfile(points);
+      const cs = detectClimbs(p.samples);
       setProfile(p);
-      setClimbs(detectClimbs(p.samples));
+      setClimbs(cs);
+      setClimbNames(Array(cs.length).fill(''));
       setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
       setProfile(null);
@@ -256,7 +279,7 @@ export default function StageProfile() {
             />
           </label>
 
-          <ProfileSvg profile={profile} climbs={climbs} title={title} svgRef={svgRef} />
+          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} title={title} svgRef={svgRef} />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label="總距離" value={`${stats.km} km`} />
@@ -271,6 +294,7 @@ export default function StageProfile() {
                 <thead>
                   <tr className="border-b border-edge">
                     <th className="px-3 py-2 text-left font-normal text-muted">爬坡</th>
+                    <th className="px-3 py-2 text-left font-normal text-muted">名稱（會畫進圖裡）</th>
                     <th className="px-3 py-2 text-right font-normal text-muted">起點</th>
                     <th className="px-3 py-2 text-right font-normal text-muted">長度</th>
                     <th className="px-3 py-2 text-right font-normal text-muted">爬升</th>
@@ -284,6 +308,15 @@ export default function StageProfile() {
                         <span className="rounded px-2 py-0.5 text-xs font-bold text-white" style={{ background: catColor(c.category) }}>
                           {c.category ? (c.category === 'HC' ? 'HC' : `${c.category} 級`) : '未分級'}
                         </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          value={climbNames[i] ?? ''}
+                          onChange={(e) => setClimbNames((prev) => prev.map((n, j) => (j === i ? e.target.value : n)))}
+                          placeholder={`例如：風櫃嘴`}
+                          aria-label={`爬坡 ${i + 1} 名稱`}
+                          className="w-28 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                        />
                       </td>
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-ink">{(c.startM / 1000).toFixed(1)} km</td>
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-ink">{(c.lengthM / 1000).toFixed(1)} km</td>
