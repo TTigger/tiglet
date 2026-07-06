@@ -33,6 +33,8 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue('測試爬坡');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
   await expect(page.getByText('總爬升', { exact: true })).toBeVisible(); // 統計卡（SVG 副標裡也有這串字）
+  // Y 軸海拔刻度（100→500m 的爬升 → 100m 級距）
+  await expect(page.getByText('400m', { exact: true })).toBeVisible();
   // 8km@5% → 分數 ~40000 → 二級坡
   await expect(page.getByText('2 級')).toBeVisible();
 

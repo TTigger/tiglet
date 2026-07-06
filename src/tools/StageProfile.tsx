@@ -70,6 +70,11 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
   for (let km = step; km < totalKm; km += step) ticks.push(km);
   const ascent = totalAscentM(samples);
 
+  // Y 軸海拔刻度：挑一個讓刻度數落在 3–6 條的整數級距
+  const eleStep = [10, 20, 50, 100, 200, 250, 500, 1000].find((s) => range / s <= 5) ?? 1000;
+  const eleTicks: number[] = [];
+  for (let e = Math.ceil(minE / eleStep) * eleStep; e <= maxE; e += eleStep) eleTicks.push(e);
+
   return (
     <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="賽段剖面圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: C.bg }}>
       <rect x={0} y={0} width={W} height={H} fill={C.bg} />
@@ -80,8 +85,18 @@ function ProfileSvg({ profile, climbs, title, svgRef }: { profile: Profile; clim
       </text>
       <text x={W - MR} y={30} fill={C.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
+      {/* Y 軸海拔刻度與網格線（畫在剖面下層） */}
+      {eleTicks.map((e) => (
+        <g key={e}>
+          <line x1={ML} y1={y(e)} x2={W - MR} y2={y(e)} stroke="#D6D1C4" strokeWidth={1} strokeDasharray="3 4" />
+          <text x={ML - 6} y={y(e) + 3} fill="#6B6A63" fontSize={10} textAnchor="end" fontFamily="system-ui, sans-serif">
+            {e}m
+          </text>
+        </g>
+      ))}
+
       {/* 主剖面 */}
-      <path d={areaPath} fill={C.fill} />
+      <path d={areaPath} fill={C.fill} opacity={0.92} />
       {/* 爬坡段上色 */}
       {climbs.map((c, i) => (
         <path key={i} d={climbArea(c)} fill={catColor(c.category)} opacity={0.45} />
