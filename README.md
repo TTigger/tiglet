@@ -53,6 +53,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Cycling | **Stage Profile** | Upload a GPX and get a Tour-style stage profile — climbs auto-detected and categorized (HC–Cat 4), gradient stats, downloadable as PNG; parsed entirely in your browser |
 | Text | **Word Count** | Live character / CJK / word / line / paragraph counts with reading-time estimate, Chinese and English counted separately |
 | Text | **Encoder** | Two-way Base64 (UTF-8 safe), URL percent-encoding, and HTML entities conversion with one-tap copy |
+| Text | **Text Diff** | Line-level LCS diff with inline character highlighting — zero dependencies |
 
 ## Tech stack
 

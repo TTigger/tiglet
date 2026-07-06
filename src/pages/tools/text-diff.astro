@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TextDiff from '../../tools/TextDiff.tsx';
+---
+<BaseLayout title="文字比對 — Tiglet" description="兩段文字的差異比對：行級 LCS 加上行內字元級高亮，新增與刪除一目了然。" toolId="text-diff">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">文字比對</h1>
+  <TextDiff client:visible />
+</BaseLayout>
