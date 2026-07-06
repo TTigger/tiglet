@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RideFuel from '../../tools/RideFuel.tsx';
+---
+<BaseLayout title="騎乘熱量 — Tiglet" description="把碼錶的做功 kJ 換算成消耗大卡與等值食物，附騎乘中碳水補給與排汗率補水建議。" toolId="ride-fuel">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">騎乘熱量</h1>
+  <RideFuel client:visible />
+</BaseLayout>

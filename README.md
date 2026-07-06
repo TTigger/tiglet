@@ -46,6 +46,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Utilities | **Color Extractor** | Upload an image and pull out its dominant colors (median cut), copyable as HEX/RGB |
 | Utilities | **Image Studio** | Compress, resize, and convert (JPEG / PNG / WebP) with a before/after comparison |
 | Cycling | **Gear Calculator** | Road-bike drivetrain math — gear ratio matrix, cadence→speed tables, A/B setup comparison, and derailleur capacity check, all shareable via URL |
+| Cycling | **Ride Fuel** | Convert your bike computer's kJ into kcal burned and food equivalents, with carbs-per-hour fueling and sweat-rate hydration guidance |
 
 ## Tech stack
 
