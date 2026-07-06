@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GearCalculator from '../../tools/GearCalculator.tsx';
+---
+<BaseLayout title="齒比計算器 — Tiglet" description="公路車齒比計算：大盤×飛輪齒比表、迴轉速時速對照、A/B 傳動比較與變速器容量檢查，設定可透過網址分享。" toolId="gear-calculator">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">齒比計算器</h1>
+  <GearCalculator client:visible />
+</BaseLayout>

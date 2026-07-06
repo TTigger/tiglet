@@ -45,6 +45,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Utilities | **Color Converter** | Convert between HEX / RGB / HSL live, with a picker and one-tap copy |
 | Utilities | **Color Extractor** | Upload an image and pull out its dominant colors (median cut), copyable as HEX/RGB |
 | Utilities | **Image Studio** | Compress, resize, and convert (JPEG / PNG / WebP) with a before/after comparison |
+| Cycling | **Gear Calculator** | Road-bike drivetrain math — gear ratio matrix, cadence→speed tables, A/B setup comparison, and derailleur capacity check, all shareable via URL |
 
 ## Tech stack
 

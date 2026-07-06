@@ -2,13 +2,15 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { waitForIslands } from './helpers';
 
-// Ctrl+K 是 toggle 鍵，不能用「重按到出現」的方式等 hydration
-// （慢速環境下會開了又關來回震盪），改成等島嶼就緒後只按一次。
+// Ctrl+K 是 toggle 鍵：島嶼就緒後仍可能有監聽器尚未掛上的縫隙（CI 曾閃退），
+// 所以用「面板沒開才按」的防護重試——永遠不會把已開的面板按關。
 async function openPalette(page: Page) {
   await waitForIslands(page);
-  await page.keyboard.press('Control+k');
   const input = page.getByPlaceholder('跳到工具…');
-  await expect(input).toBeVisible();
+  await expect(async () => {
+    if (!(await input.isVisible())) await page.keyboard.press('Control+k');
+    await expect(input).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   return input;
 }
 
