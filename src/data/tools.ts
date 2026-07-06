@@ -41,4 +41,5 @@ export const tools: Tool[] = [
   { id: 'stage-profile', title: '賽段剖面圖', description: '上傳 GPX 生成環法風剖面圖，爬坡自動分級。', category: '單車', path: '/tools/stage-profile', icon: '⛰️', status: 'available', keywords: ['gpx', 'profile', '剖面圖', '爬坡', 'climb', 'hc', '海拔', 'strava', '路線', '公路車', 'bike'] },
   { id: 'word-count', title: '字數統計', description: '字元、中英文字數、行數與閱讀時間即時統計。', category: '文字', path: '/tools/word-count', icon: '🔢', status: 'available', keywords: ['word', 'count', '字數', '統計', 'character', '閱讀時間'] },
   { id: 'encoder', title: '編解碼工具', description: 'Base64、URL、HTML entities 雙向轉換。', category: '文字', path: '/tools/encoder', icon: '🔐', status: 'available', keywords: ['base64', 'url', 'encode', 'decode', '編碼', '解碼', 'html', 'entities'] },
+  { id: 'text-diff', title: '文字比對', description: '兩段文字的差異高亮，行級加字元級。', category: '文字', path: '/tools/text-diff', icon: '🔍', status: 'available', keywords: ['diff', 'compare', '比對', '差異', '比較'] },
 ];
