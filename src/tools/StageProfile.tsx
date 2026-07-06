@@ -23,14 +23,25 @@ export interface Waypoint {
 }
 
 // 檔案完全在本機解析；SVG 用固定色票（非 CSS 變數），
-// 匯出的 PNG 才不會受深淺色主題影響。
+// 匯出的 PNG 才不會受深淺色主題影響。出圖主題只換底/墨/點綴色，
+// 坡度色階是語意（多陡），不隨主題變。
 
-const C = {
-  bg: '#FAF9F5',
-  ink: '#1A1A18',
-  accent: '#D97757',
-  fill: '#EAC4B0',
-};
+export interface ProfileTheme {
+  id: string;
+  label: string;
+  bg: string;
+  ink: string;
+  muted: string;
+  grid: string;
+  accent: string;
+}
+
+const THEMES: ProfileTheme[] = [
+  { id: 'tiglet', label: 'Tiglet 暖橘', bg: '#FAF9F5', ink: '#1A1A18', muted: '#6B6A63', grid: '#D6D1C4', accent: '#D97757' },
+  { id: 'tour', label: '環法黃', bg: '#FFFFFF', ink: '#14141E', muted: '#5A5A66', grid: '#E2E2E8', accent: '#D4A800' },
+  { id: 'giro', label: '環義粉', bg: '#FFF6FA', ink: '#2B1A22', muted: '#8A6A78', grid: '#F0D4E2', accent: '#E5518D' },
+  { id: 'vuelta', label: '環西紅', bg: '#FFFAF6', ink: '#241514', muted: '#8A6A62', grid: '#F0DCD0', accent: '#DA291C' },
+];
 
 const W = 840;
 const H = 380;
@@ -46,7 +57,7 @@ function catColor(id: string | null): string {
 }
 
 // SVG → 2x PNG 下載（主圖與爬坡細部圖共用）
-function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string) {
+function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string, bg: string) {
   const xml = new XMLSerializer().serializeToString(svg);
   const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -57,7 +68,7 @@ function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, fil
     canvas.width = width * scale;
     canvas.height = height * scale;
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = C.bg;
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     URL.revokeObjectURL(url);
@@ -80,7 +91,7 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; svgRef: React.RefObject<SVGSVGElement | null> }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null> }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
   const eles = samples.map((s) => s.ele);
@@ -114,14 +125,14 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
   for (let e = Math.ceil(minE / eleStep) * eleStep; e <= maxE; e += eleStep) eleTicks.push(e);
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="賽段剖面圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: C.bg }}>
-      <rect x={0} y={0} width={W} height={H} fill={C.bg} />
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="賽段剖面圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
+      <rect x={0} y={0} width={W} height={H} fill={theme.bg} />
       {/* 標題與總覽 */}
-      <text x={ML} y={30} fill={C.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || '我的路線'}</text>
-      <text x={ML} y={50} fill="#6B6A63" fontSize={12} fontFamily="system-ui, sans-serif">
+      <text x={ML} y={30} fill={theme.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || '我的路線'}</text>
+      <text x={ML} y={50} fill={theme.muted} fontSize={12} fontFamily="system-ui, sans-serif">
         {totalKm.toFixed(1)} km ・ 總爬升 {Math.round(ascent)} m ・ 海拔 {Math.round(minE)}–{Math.round(maxE)} m
       </text>
-      <text x={W - MR} y={30} fill={C.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
+      <text x={W - MR} y={30} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
       {/* 坡度色階圖例（右上，會一起輸出進 PNG） */}
       <g fontFamily="system-ui, sans-serif" fontSize={9}>
@@ -130,7 +141,7 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
           return (
             <g key={b.id}>
               <rect x={bx} y={42} width={9} height={9} rx={2} fill={b.color} />
-              <text x={bx + 12} y={50} fill="#6B6A63">{b.label}</text>
+              <text x={bx + 12} y={50} fill={theme.muted}>{b.label}</text>
             </g>
           );
         })}
@@ -139,8 +150,8 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
       {/* Y 軸海拔刻度與網格線（畫在剖面下層） */}
       {eleTicks.map((e) => (
         <g key={e}>
-          <line x1={ML} y1={y(e)} x2={W - MR} y2={y(e)} stroke="#D6D1C4" strokeWidth={1} strokeDasharray="3 4" />
-          <text x={ML - 6} y={y(e) + 3} fill="#6B6A63" fontSize={10} textAnchor="end" fontFamily="system-ui, sans-serif">
+          <line x1={ML} y1={y(e)} x2={W - MR} y2={y(e)} stroke={theme.grid} strokeWidth={1} strokeDasharray="3 4" />
+          <text x={ML - 6} y={y(e) + 3} fill={theme.muted} fontSize={10} textAnchor="end" fontFamily="system-ui, sans-serif">
             {e}m
           </text>
         </g>
@@ -150,23 +161,23 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
       {segments.map((s, i) => (
         <path key={i} d={sliceArea(s.startM, s.endM)} fill={s.band.color} opacity={0.85} />
       ))}
-      <path d={linePath} fill="none" stroke={C.ink} strokeWidth={1.5} />
-      <line x1={ML} y1={baseY} x2={W - MR} y2={baseY} stroke={C.ink} strokeWidth={1} />
+      <path d={linePath} fill="none" stroke={theme.ink} strokeWidth={1.5} />
+      <line x1={ML} y1={baseY} x2={W - MR} y2={baseY} stroke={theme.ink} strokeWidth={1} />
 
       {/* 公里刻度 */}
       {ticks.map((km) => (
         <g key={km}>
-          <line x1={x(km * 1000)} y1={baseY} x2={x(km * 1000)} y2={baseY + 5} stroke="#6B6A63" strokeWidth={1} />
-          <text x={x(km * 1000)} y={baseY + 18} fill="#6B6A63" fontSize={10} textAnchor="middle" fontFamily="system-ui, sans-serif">{km}k</text>
+          <line x1={x(km * 1000)} y1={baseY} x2={x(km * 1000)} y2={baseY + 5} stroke={theme.muted} strokeWidth={1} />
+          <text x={x(km * 1000)} y={baseY + 18} fill={theme.muted} fontSize={10} textAnchor="middle" fontFamily="system-ui, sans-serif">{km}k</text>
         </g>
       ))}
 
       {/* 起終點 */}
       <g fontFamily="system-ui, sans-serif" fontSize={11}>
-        <circle cx={x(0)} cy={y(samples[0].ele)} r={4} fill={C.ink} />
-        <text x={x(0)} y={baseY + 18} fill={C.ink} textAnchor="start" fontWeight={600}>起點</text>
-        <circle cx={x(total)} cy={y(samples[samples.length - 1].ele)} r={4} fill={C.ink} />
-        <text x={x(total)} y={baseY + 18} fill={C.ink} textAnchor="end" fontWeight={600}>終點</text>
+        <circle cx={x(0)} cy={y(samples[0].ele)} r={4} fill={theme.ink} />
+        <text x={x(0)} y={baseY + 18} fill={theme.ink} textAnchor="start" fontWeight={600}>起點</text>
+        <circle cx={x(total)} cy={y(samples[samples.length - 1].ele)} r={4} fill={theme.ink} />
+        <text x={x(total)} y={baseY + 18} fill={theme.ink} textAnchor="end" fontWeight={600}>終點</text>
       </g>
 
       {/* 自訂地標（補給站/城鎮）：點 + 虛線落點 + 45° 斜排名稱與海拔 */}
@@ -179,12 +190,12 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
           const wy = y(ele);
           return (
             <g key={`wp-${i}`} fontFamily="system-ui, sans-serif">
-              <line x1={wx} y1={wy} x2={wx} y2={baseY} stroke="#6B6A63" strokeWidth={1} strokeDasharray="2 3" />
-              <circle cx={wx} cy={wy} r={3.5} fill={C.bg} stroke={C.ink} strokeWidth={1.5} />
+              <line x1={wx} y1={wy} x2={wx} y2={baseY} stroke={theme.muted} strokeWidth={1} strokeDasharray="2 3" />
+              <circle cx={wx} cy={wy} r={3.5} fill={theme.bg} stroke={theme.ink} strokeWidth={1.5} />
               <text
                 x={wx + 4}
                 y={wy - 8}
-                fill={C.ink}
+                fill={theme.ink}
                 fontSize={10}
                 transform={`rotate(-45, ${wx + 4}, ${wy - 8})`}
               >
@@ -206,11 +217,11 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: {
             <line x1={cx} y1={cy} x2={cx} y2={cy - 26} stroke={color} strokeWidth={1.5} />
             <rect x={cx - 15} y={cy - 46} width={30} height={20} rx={4} fill={color} />
             <text x={cx} y={cy - 32} fill="#fff" fontSize={12} fontWeight={700} textAnchor="middle">{label}</text>
-            <text x={cx} y={cy - 52} fill={C.ink} fontSize={10} textAnchor="middle">
+            <text x={cx} y={cy - 52} fill={theme.ink} fontSize={10} textAnchor="middle">
               {(c.lengthM / 1000).toFixed(1)}km @ {c.avgGradientPct.toFixed(1)}%
             </text>
             {name && (
-              <text x={cx} y={cy - 64} fill={C.ink} fontSize={12} fontWeight={700} textAnchor="middle">
+              <text x={cx} y={cy - 64} fill={theme.ink} fontSize={12} fontWeight={700} textAnchor="middle">
                 {name}（海拔 {Math.round(c.topEle)}m）
               </text>
             )}
@@ -229,7 +240,7 @@ const DMR = 24;
 const DMT = 56;
 const DMB = 34;
 
-function ClimbDetail({ profile, climb, name }: { profile: Profile; climb: Climb; name: string }) {
+function ClimbDetail({ profile, climb, name, theme }: { profile: Profile; climb: Climb; name: string; theme: ProfileTheme }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const blocks = climbKmBlocks(profile.samples, climb);
   const minE = blocks[0].startEle;
@@ -244,14 +255,14 @@ function ClimbDetail({ profile, climb, name }: { profile: Profile; climb: Climb;
 
   return (
     <div className="space-y-2">
-      <svg ref={svgRef} viewBox={`0 0 ${DW} ${DH}`} role="img" aria-label="爬坡細部圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: C.bg }}>
-        <rect x={0} y={0} width={DW} height={DH} fill={C.bg} />
-        <text x={DML} y={26} fill={C.ink} fontSize={18} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{displayName}</text>
-        <text x={DML} y={44} fill="#6B6A63" fontSize={11} fontFamily="system-ui, sans-serif">
+      <svg ref={svgRef} viewBox={`0 0 ${DW} ${DH}`} role="img" aria-label="爬坡細部圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
+        <rect x={0} y={0} width={DW} height={DH} fill={theme.bg} />
+        <text x={DML} y={26} fill={theme.ink} fontSize={18} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{displayName}</text>
+        <text x={DML} y={44} fill={theme.muted} fontSize={11} fontFamily="system-ui, sans-serif">
           {(climb.lengthM / 1000).toFixed(1)} km ・ 爬升 {Math.round(climb.gainM)} m ・ 平均 {climb.avgGradientPct.toFixed(1)}%
           {climb.category ? ` ・ ${climb.category === 'HC' ? 'HC' : `${climb.category} 級`}坡` : ''}
         </text>
-        <text x={DW - DMR} y={26} fill={C.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
+        <text x={DW - DMR} y={26} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
         {blocks.map((b, i) => {
           const x1 = x(b.startM);
@@ -262,7 +273,7 @@ function ClimbDetail({ profile, climb, name }: { profile: Profile; climb: Climb;
               <polygon
                 points={`${x1},${y(b.startEle)} ${x2},${y(b.endEle)} ${x2},${baseY} ${x1},${baseY}`}
                 fill={b.band.color}
-                stroke={C.bg}
+                stroke={theme.bg}
                 strokeWidth={1.5}
               />
               {/* 塊內坡度 */}
@@ -271,17 +282,17 @@ function ClimbDetail({ profile, climb, name }: { profile: Profile; climb: Climb;
               </text>
               {/* 邊界海拔（坡頂一定標） */}
               {(i % labelEvery === 0 || i === blocks.length - 1) && (
-                <text x={x2} y={y(b.endEle) - 6} fill={C.ink} fontSize={9} textAnchor="middle">{Math.round(b.endEle)}m</text>
+                <text x={x2} y={y(b.endEle) - 6} fill={theme.ink} fontSize={9} textAnchor="middle">{Math.round(b.endEle)}m</text>
               )}
               {/* 底部相對公里數 */}
-              <text x={x1} y={baseY + 14} fill="#6B6A63" fontSize={9} textAnchor="middle">{((b.startM - climb.startM) / 1000).toFixed(0)}k</text>
+              <text x={x1} y={baseY + 14} fill={theme.muted} fontSize={9} textAnchor="middle">{((b.startM - climb.startM) / 1000).toFixed(0)}k</text>
             </g>
           );
         })}
-        <line x1={DML} y1={baseY} x2={DW - DMR} y2={baseY} stroke={C.ink} strokeWidth={1} />
+        <line x1={DML} y1={baseY} x2={DW - DMR} y2={baseY} stroke={theme.ink} strokeWidth={1} />
       </svg>
       <button
-        onClick={() => svgRef.current && downloadSvgAsPng(svgRef.current, DW, DH, `${displayName}.png`)}
+        onClick={() => svgRef.current && downloadSvgAsPng(svgRef.current, DW, DH, `${displayName}.png`, theme.bg)}
         className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
       >
         下載細部圖 PNG
@@ -313,9 +324,11 @@ export default function StageProfile() {
   const [climbNames, setClimbNames] = useState<string[]>([]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
+  const [themeIdx, setThemeIdx] = useState(0);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const theme = THEMES[themeIdx];
 
   async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -341,7 +354,7 @@ export default function StageProfile() {
   }
 
   function downloadPng() {
-    if (svgRef.current) downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`);
+    if (svgRef.current) downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg);
   }
 
   const stats = profile
@@ -387,7 +400,22 @@ export default function StageProfile() {
             />
           </label>
 
-          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} svgRef={svgRef} />
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="mr-2 text-sm text-muted">出圖主題</span>
+            {THEMES.map((t, i) => (
+              <button
+                key={t.id}
+                onClick={() => setThemeIdx(i)}
+                aria-pressed={themeIdx === i}
+                className={`flex items-center gap-1.5 rounded-md border border-edge px-3 py-1 text-sm ${themeIdx === i ? 'bg-accent text-white' : 'text-muted hover:text-ink'}`}
+              >
+                <span className="inline-block h-3 w-3 rounded-full border border-black/10" style={{ background: t.accent }} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label="總距離" value={`${stats.km} km`} />
@@ -448,7 +476,7 @@ export default function StageProfile() {
           )}
 
           {detailIdx !== null && climbs[detailIdx] && (
-            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} />
+            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} theme={theme} />
           )}
 
           <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
