@@ -34,4 +34,5 @@ export const tools: Tool[] = [
   { id: 'color-extractor', title: '圖片取色', description: '上傳圖片，自動列出主要色號並複製。', category: '實用工具', path: '/tools/color-extractor', icon: '🌈', status: 'available', keywords: ['color', 'palette', '取色', '色票', '調色盤'] },
   { id: 'image-studio', title: '圖片工具', description: '壓縮、縮放、格式轉換，附前後對比。', category: '實用工具', path: '/tools/image-studio', icon: '🖼️', status: 'available', keywords: ['image', '壓縮', '縮放', '轉檔', 'compress', 'resize', 'convert', 'webp'] },
   { id: 'gear-calculator', title: '齒比計算器', description: '齒比表、速度對照、A/B 傳動比較與容量檢查。', category: '單車', path: '/tools/gear-calculator', icon: '⚙️', status: 'available', keywords: ['gear', 'ratio', '齒比', '公路車', 'bike', '飛輪', '大盤', 'cassette', 'cadence', '迴轉速'] },
+  { id: 'ride-fuel', title: '騎乘熱量', description: '碼錶 kJ 換算大卡與食物，附補給與補水建議。', category: '單車', path: '/tools/ride-fuel', icon: '🍌', status: 'available', keywords: ['kj', 'kcal', '大卡', '熱量', '補給', 'fuel', 'calories', '公路車', 'bike', '排汗'] },
 ];
