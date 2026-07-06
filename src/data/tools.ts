@@ -1,4 +1,4 @@
-export type ToolCategory = '計算' | '遊戲' | '隨機決定' | '實用工具' | '單車';
+export type ToolCategory = '計算' | '遊戲' | '隨機決定' | '實用工具' | '單車' | '文字';
 export type ToolStatus = 'available' | 'soon';
 
 export interface Tool {
@@ -12,7 +12,7 @@ export interface Tool {
   keywords?: string[];
 }
 
-export const CATEGORY_ORDER: ToolCategory[] = ['計算', '遊戲', '隨機決定', '實用工具', '單車'];
+export const CATEGORY_ORDER: ToolCategory[] = ['計算', '遊戲', '隨機決定', '實用工具', '單車', '文字'];
 
 export const tools: Tool[] = [
   { id: 'calculator', title: '計算機', description: '四則運算與鍵盤輸入的基本計算機。', category: '計算', path: '/tools/calculator', icon: '🧮', status: 'available', keywords: ['calculator', '加減乘除'] },
@@ -39,4 +39,5 @@ export const tools: Tool[] = [
   { id: 'ftp-zones', title: 'FTP 訓練區間', description: 'Coggan 功率七區、W/kg 等級與心率區間。', category: '單車', path: '/tools/ftp-zones', icon: '⚡', status: 'available', keywords: ['ftp', 'zone', '功率', '訓練', 'watt', 'w/kg', '心率', 'lthr', '公路車', 'bike'] },
   { id: 'tire-pressure', title: '胎壓建議', description: '依體重胎寬與路面，算前後輪建議胎壓。', category: '單車', path: '/tools/tire-pressure', icon: '🛞', status: 'available', keywords: ['tire', 'pressure', '胎壓', 'psi', 'bar', 'tubeless', '無內胎', '公路車', 'bike'] },
   { id: 'stage-profile', title: '賽段剖面圖', description: '上傳 GPX 生成環法風剖面圖，爬坡自動分級。', category: '單車', path: '/tools/stage-profile', icon: '⛰️', status: 'available', keywords: ['gpx', 'profile', '剖面圖', '爬坡', 'climb', 'hc', '海拔', 'strava', '路線', '公路車', 'bike'] },
+  { id: 'word-count', title: '字數統計', description: '字元、中英文字數、行數與閱讀時間即時統計。', category: '文字', path: '/tools/word-count', icon: '🔢', status: 'available', keywords: ['word', 'count', '字數', '統計', 'character', '閱讀時間'] },
 ];
