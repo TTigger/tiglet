@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import StageProfile from '../../tools/StageProfile.tsx';
+---
+<BaseLayout title="賽段剖面圖 — Tiglet" description="上傳 GPX 檔，在瀏覽器本機生成環法風格的賽段剖面圖：自動偵測爬坡並分級（HC～四級）、坡度分布與最陡路段，一鍵下載 PNG 分享。" toolId="stage-profile">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">賽段剖面圖</h1>
+  <StageProfile client:visible />
+</BaseLayout>

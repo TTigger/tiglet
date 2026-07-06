@@ -37,4 +37,5 @@ export const tools: Tool[] = [
   { id: 'ride-fuel', title: '騎乘熱量', description: '碼錶 kJ 換算大卡與食物，附補給與補水建議。', category: '單車', path: '/tools/ride-fuel', icon: '🍌', status: 'available', keywords: ['kj', 'kcal', '大卡', '熱量', '補給', 'fuel', 'calories', '公路車', 'bike', '排汗'] },
   { id: 'ftp-zones', title: 'FTP 訓練區間', description: 'Coggan 功率七區、W/kg 等級與心率區間。', category: '單車', path: '/tools/ftp-zones', icon: '⚡', status: 'available', keywords: ['ftp', 'zone', '功率', '訓練', 'watt', 'w/kg', '心率', 'lthr', '公路車', 'bike'] },
   { id: 'tire-pressure', title: '胎壓建議', description: '依體重胎寬與路面，算前後輪建議胎壓。', category: '單車', path: '/tools/tire-pressure', icon: '🛞', status: 'available', keywords: ['tire', 'pressure', '胎壓', 'psi', 'bar', 'tubeless', '無內胎', '公路車', 'bike'] },
+  { id: 'stage-profile', title: '賽段剖面圖', description: '上傳 GPX 生成環法風剖面圖，爬坡自動分級。', category: '單車', path: '/tools/stage-profile', icon: '⛰️', status: 'available', keywords: ['gpx', 'profile', '剖面圖', '爬坡', 'climb', 'hc', '海拔', 'strava', '路線', '公路車', 'bike'] },
 ];
