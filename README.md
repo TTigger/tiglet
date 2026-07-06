@@ -55,6 +55,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 | Text | **Encoder** | Two-way Base64 (UTF-8 safe), URL percent-encoding, and HTML entities conversion with one-tap copy |
 | Text | **Text Diff** | Line-level LCS diff with inline character highlighting — zero dependencies |
 | Text | **JSON Tool** | Format, minify, validate (errors located to line/column by a hand-rolled scanner), and a collapsible tree view with click-to-copy JSON paths |
+| Text | **Markdown Studio** | Paste or upload Markdown for a live preview (DOMPurify-sanitized), a clickable heading-outline tree, and document stats |
 
 ## Tech stack
 
@@ -67,7 +68,7 @@ fetches public exchange rates; see [Privacy](#privacy).)
 - **[@vite-pwa/astro](https://vite-pwa-org.netlify.app)** — manifest + service worker
 - **Web platform APIs** — Canvas for the image/color tools, Web Crypto for password generation,
   `Intl` for time zones
-- Client-side **SheetJS** (`xlsx`) and **`qrcode`**, both dynamically imported
+- Client-side **SheetJS** (`xlsx`), **`qrcode`**, and **`marked` + `DOMPurify`** (Markdown preview), all dynamically imported
 
 ## Getting started
 

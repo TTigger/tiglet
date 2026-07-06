@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import MarkdownStudio from '../../tools/MarkdownStudio.tsx';
+---
+<BaseLayout title="Markdown 工具 — Tiglet" description="貼上或上傳 Markdown：即時預覽（DOMPurify 清洗）、標題結構樹（點擊跳轉）與文件統計。" toolId="markdown-studio">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">Markdown 工具</h1>
+  <MarkdownStudio client:visible />
+</BaseLayout>
