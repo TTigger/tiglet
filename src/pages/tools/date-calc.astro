@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DateCalc from '../../tools/DateCalc.tsx';
+---
+<BaseLayout title="日期計算器 — Tiglet" description="日期差、日期推算（含月底夾住）、可分享的倒數日與工作天計算，四合一日期工具。" toolId="date-calc">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">日期計算器</h1>
+  <DateCalc client:visible />
+</BaseLayout>
