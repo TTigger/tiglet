@@ -8,12 +8,18 @@ import {
   detectClimbs,
   gradientBuckets,
   gradientSegments,
+  eleAtM,
   steepestKm,
   CLIMB_CATEGORIES,
   GRADIENT_BANDS,
   type Profile,
   type Climb,
 } from '../lib/gpx';
+
+export interface Waypoint {
+  km: string; // 使用者輸入的公里數（字串保留輸入狀態）
+  name: string;
+}
 
 // 檔案完全在本機解析；SVG 用固定色票（非 CSS 變數），
 // 匯出的 PNG 才不會受深淺色主題影響。
@@ -45,7 +51,7 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, title, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; title: string; svgRef: React.RefObject<SVGSVGElement | null> }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; svgRef: React.RefObject<SVGSVGElement | null> }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
   const eles = samples.map((s) => s.ele);
@@ -134,6 +140,31 @@ function ProfileSvg({ profile, climbs, climbNames, title, svgRef }: { profile: P
         <text x={x(total)} y={baseY + 18} fill={C.ink} textAnchor="end" fontWeight={600}>終點</text>
       </g>
 
+      {/* 自訂地標（補給站/城鎮）：點 + 虛線落點 + 45° 斜排名稱與海拔 */}
+      {waypoints
+        .map((w) => ({ name: w.name.trim(), m: Number(w.km) * 1000 }))
+        .filter((w) => w.name && Number.isFinite(w.m) && w.m >= 0 && w.m <= total)
+        .map((w, i) => {
+          const wx = x(w.m);
+          const ele = eleAtM(samples, w.m);
+          const wy = y(ele);
+          return (
+            <g key={`wp-${i}`} fontFamily="system-ui, sans-serif">
+              <line x1={wx} y1={wy} x2={wx} y2={baseY} stroke="#6B6A63" strokeWidth={1} strokeDasharray="2 3" />
+              <circle cx={wx} cy={wy} r={3.5} fill={C.bg} stroke={C.ink} strokeWidth={1.5} />
+              <text
+                x={wx + 4}
+                y={wy - 8}
+                fill={C.ink}
+                fontSize={10}
+                transform={`rotate(-45, ${wx + 4}, ${wy - 8})`}
+              >
+                {w.name} {Math.round(ele)}m
+              </text>
+            </g>
+          );
+        })}
+
       {/* 爬坡徽章（山頂），有命名時把名字畫進圖裡 */}
       {climbs.map((c, i) => {
         const cx = x(c.endM);
@@ -182,6 +213,7 @@ export default function StageProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [climbs, setClimbs] = useState<Climb[]>([]);
   const [climbNames, setClimbNames] = useState<string[]>([]);
+  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -198,6 +230,7 @@ export default function StageProfile() {
       setProfile(p);
       setClimbs(cs);
       setClimbNames(Array(cs.length).fill(''));
+      setWaypoints([]);
       setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
       setProfile(null);
@@ -279,7 +312,7 @@ export default function StageProfile() {
             />
           </label>
 
-          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} title={title} svgRef={svgRef} />
+          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} svgRef={svgRef} />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label="總距離" value={`${stats.km} km`} />
@@ -328,6 +361,51 @@ export default function StageProfile() {
               </table>
             </div>
           )}
+
+          <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-ink">地標／補給站（會以斜排標注畫進圖裡）</span>
+              <button
+                onClick={() => setWaypoints((prev) => [...prev, { km: '', name: '' }])}
+                className="text-sm text-accent hover:underline"
+              >
+                ＋ 新增地標
+              </button>
+            </div>
+            {waypoints.length === 0 ? (
+              <p className="text-xs text-muted">例如：西寶 26km、大禹嶺 87km——標出補給站或途經城鎮，做出台灣 KOM 式的賽段圖。</p>
+            ) : (
+              <div className="space-y-2">
+                {waypoints.map((w, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={w.km}
+                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, km: e.target.value } : p)))}
+                      placeholder="26"
+                      aria-label={`地標 ${i + 1} 公里數`}
+                      className="w-20 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                    />
+                    <span className="text-xs text-muted">km</span>
+                    <input
+                      value={w.name}
+                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, name: e.target.value } : p)))}
+                      placeholder="例如：西寶補給站"
+                      aria-label={`地標 ${i + 1} 名稱`}
+                      className="flex-1 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                    />
+                    <button
+                      onClick={() => setWaypoints((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={`刪除地標 ${i + 1}`}
+                      className="text-sm text-muted hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button onClick={downloadPng} className="rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
