@@ -138,6 +138,23 @@ test('零檔案：載入範例路線直接出圖', async ({ page }) => {
   await expect(page.getByLabel('地標 1 名稱')).toHaveValue('山腳補給站');
 });
 
+test('手動建路線：檢查點直接出圖', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  await page.getByText('或者：手動建路線', { exact: false }).click();
+  await page.getByLabel('檢查點 1 距離').fill('0');
+  await page.getByLabel('檢查點 1 海拔').fill('100');
+  await page.getByLabel('檢查點 2 距離').fill('10');
+  await page.getByLabel('檢查點 2 海拔').fill('600');
+  await page.getByRole('button', { name: '生成剖面圖' }).click();
+
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+  await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue('手動路線');
+  // 10km @5% → 二級坡
+  await expect(page.getByText('2 級', { exact: true })).toBeVisible();
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
