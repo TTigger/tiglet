@@ -721,8 +721,25 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) loadFile(f); }}
-        className={`rounded-[var(--radius-card)] border border-dashed p-4 text-center transition-colors ${dragging ? 'border-accent bg-accent/5' : 'border-edge bg-surface'}`}
+        className={`rounded-[var(--radius-card)] border border-dashed p-5 text-center transition-colors ${dragging ? 'border-accent bg-accent/5' : 'border-edge bg-surface'}`}
       >
+        {/* 雲朵上傳 icon：呼應「拖進來就能上傳」，拖曳中變主色 */}
+        <svg
+          viewBox="0 0 24 24"
+          width="34"
+          height="34"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className={`mx-auto mb-2 transition-colors ${dragging ? 'text-accent' : 'text-muted'}`}
+        >
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 4 16.3" />
+          <polyline points="16 16 12 12 8 16" />
+          <line x1="12" y1="12" x2="12" y2="21" />
+        </svg>
         <label className="cursor-pointer text-accent hover:underline">
           {t.upload}
           <input type="file" accept=".gpx,.fit,.tcx" onChange={onFile} className="hidden" />
