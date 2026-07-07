@@ -1,0 +1,53 @@
+---
+import SearchBar from './SearchBar.tsx';
+import ToolCard from './ToolCard.astro';
+import { tools, CATEGORY_ORDER } from '../data/tools';
+import { categoryLabel, type Locale } from '../lib/i18n';
+
+// 首頁主體（zh 與 /en/ 共用）：工具卡片伺服器端輸出（SEO），
+// SearchBar island 負責搜尋過濾與最愛/最近。
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const available = tools.filter((t) => t.status === 'available');
+---
+<SearchBar client:idle locale={locale} />
+<div id="all-tools">
+  {CATEGORY_ORDER.map((cat) => {
+    const inCat = available.filter((t) => t.category === cat);
+    if (inCat.length === 0) return null;
+    return (
+      <section class="mb-10">
+        <h2 class="mb-4 font-serif text-xl text-ink">{categoryLabel(cat, locale)}</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {inCat.map((t) => <ToolCard tool={t} locale={locale} />)}
+        </div>
+      </section>
+    );
+  })}
+</div>
+<script>
+  // 靜態卡片星星：單一委派監聽器驅動全部星星，與 SearchBar island 靠事件同步
+  import { isFavorite, toggleFavorite, FAV_CHANGE_EVENT } from '../lib/storage';
+
+  function paint() {
+    document.querySelectorAll<HTMLButtonElement>('#all-tools .js-fav').forEach((b) => {
+      const on = isFavorite(b.dataset.id ?? '');
+      b.textContent = on ? '⭐' : '☆';
+      b.setAttribute('aria-pressed', String(on));
+    });
+  }
+
+  document.getElementById('all-tools')?.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.js-fav');
+    if (!btn) return;
+    e.preventDefault();
+    toggleFavorite(btn.dataset.id ?? '');
+    paint();
+    window.dispatchEvent(new Event(FAV_CHANGE_EVENT));
+  });
+
+  window.addEventListener(FAV_CHANGE_EVENT, paint);
+  paint();
+</script>
