@@ -12,6 +12,80 @@ import {
   type ResizeMode,
 } from '../lib/image';
 import { readExifSummary, type ExifSummary } from '../lib/exif';
+import type { Locale } from '../lib/i18n';
+
+const L = {
+  zh: {
+    tabCompress: '壓縮',
+    tabResize: '縮放',
+    tabConvert: '格式轉換',
+    tabPrivacy: '清除資訊',
+    notImage: '請選擇圖片檔。',
+    loadError: '無法讀取這張圖片。',
+    processError: '處理失敗，請換一張圖片試試。',
+    dropHere: '點擊或拖曳圖片到這裡',
+    localOnly: '壓縮、縮放、轉檔都在你的瀏覽器處理，不會上傳',
+    quality: '品質',
+    pngNote: 'PNG 為無損格式，壓縮時會轉成 JPEG 才能縮小檔案。',
+    modeScale: '等比例 %',
+    modeWidth: '指定寬度',
+    modeHeight: '指定高度',
+    modeExact: '自訂寬高',
+    scaleLabel: '縮放比例',
+    widthPx: '寬度 (px)',
+    heightPx: '高度 (px)',
+    exifIntro: '這張圖片內含 EXIF 中繼資料：',
+    exifGps: '⚠️ GPS 位置（可精確定位拍攝地點）',
+    exifCamera: (s: string) => `📷 相機：${s}`,
+    exifTime: (d: string) => `🕐 拍攝時間：${d}`,
+    exifOther: '其他技術性欄位',
+    exifCleaned: '✓ 右側「處理後」的版本已移除全部中繼資料，下載即可安心分享。',
+    noExif: '未偵測到 EXIF 中繼資料（PNG／WebP 通常不帶）。處理後的版本無論如何都經過重新編碼，保證乾淨。',
+    original: '原圖',
+    processed: '處理後',
+    processing: '處理中…',
+    gpsBadge: '⚠️ 內含 GPS 位置（見「清除資訊」）',
+    sizeLine: (a: string, b: string) => `檔案大小：${a} → ${b}`,
+    delta: (reduced: boolean, n: string) => `（${reduced ? '減少' : '增加'} ${n}%）`,
+    another: '換一張',
+    download: '下載',
+  },
+  en: {
+    tabCompress: 'Compress',
+    tabResize: 'Resize',
+    tabConvert: 'Convert',
+    tabPrivacy: 'Strip metadata',
+    notImage: 'Please choose an image file.',
+    loadError: 'Could not read this image.',
+    processError: 'Processing failed — try another image.',
+    dropHere: 'Click or drop an image here',
+    localOnly: 'Compressing, resizing and converting all happen in your browser — never uploaded',
+    quality: 'Quality',
+    pngNote: 'PNG is a lossless format — compressing converts it to JPEG so the file can actually shrink.',
+    modeScale: 'Scale %',
+    modeWidth: 'Fit width',
+    modeHeight: 'Fit height',
+    modeExact: 'Exact size',
+    scaleLabel: 'Scale',
+    widthPx: 'Width (px)',
+    heightPx: 'Height (px)',
+    exifIntro: 'This image contains EXIF metadata:',
+    exifGps: '⚠️ GPS location (can pinpoint where the photo was taken)',
+    exifCamera: (s: string) => `📷 Camera: ${s}`,
+    exifTime: (d: string) => `🕐 Taken: ${d}`,
+    exifOther: 'Other technical fields',
+    exifCleaned: '✓ The "Processed" version on the right has all metadata removed — download and share with confidence.',
+    noExif: 'No EXIF metadata detected (PNG/WebP usually carry none). The processed version is re-encoded and clean either way.',
+    original: 'Original',
+    processed: 'Processed',
+    processing: 'Processing…',
+    gpsBadge: '⚠️ Contains GPS location (see "Strip metadata")',
+    sizeLine: (a: string, b: string) => `File size: ${a} → ${b}`,
+    delta: (reduced: boolean, n: string) => `(${reduced ? 'reduced' : 'increased'} ${n}%)`,
+    another: 'Choose another',
+    download: 'Download',
+  },
+} as const;
 
 interface Source {
   url: string;
@@ -54,14 +128,14 @@ async function render(img: HTMLImageElement, width: number, height: number, mime
   return { blob, width, height };
 }
 
-const TABS = [
-  { id: 'compress', label: '壓縮' },
-  { id: 'resize', label: '縮放' },
-  { id: 'convert', label: '格式轉換' },
-  { id: 'privacy', label: '清除資訊' },
-];
-
-export default function ImageStudio() {
+export default function ImageStudio({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
+  const tabs = [
+    { id: 'compress', label: t.tabCompress },
+    { id: 'resize', label: t.tabResize },
+    { id: 'convert', label: t.tabConvert },
+    { id: 'privacy', label: t.tabPrivacy },
+  ];
   const [src, setSrc] = useState<Source | null>(null);
   const [out, setOut] = useState<Output | null>(null);
   const [tab, setTab] = useState('compress');
@@ -91,7 +165,7 @@ export default function ImageStudio() {
   }, [out?.url]);
 
   function loadFile(file: File) {
-    if (!file.type.startsWith('image/')) { setError('請選擇圖片檔。'); return; }
+    if (!file.type.startsWith('image/')) { setError(t.notImage); return; }
     setError(null);
     setExif(null);
     file.arrayBuffer().then((b) => setExif(readExifSummary(b))).catch(() => setExif(null));
@@ -104,7 +178,7 @@ export default function ImageStudio() {
       setRw(img.naturalWidth);
       setRh(img.naturalHeight);
     };
-    img.onerror = () => { setError('無法讀取這張圖片。'); URL.revokeObjectURL(url); };
+    img.onerror = () => { setError(t.loadError); URL.revokeObjectURL(url); };
     img.src = url;
   }
 
@@ -141,7 +215,7 @@ export default function ImageStudio() {
         const e = extForMime(mime);
         setOut({ url, size: blob.size, width: ow, height: oh, ext: e, name: renameExt(src.name, e) });
       } catch {
-        if (id === reqId.current) setError('處理失敗，請換一張圖片試試。');
+        if (id === reqId.current) setError(t.processError);
       } finally {
         if (id === reqId.current) setBusy(false);
       }
@@ -162,46 +236,46 @@ export default function ImageStudio() {
         >
           <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) loadFile(f); }} />
           <span className="text-3xl">🖼️</span>
-          <span className="mt-2 text-sm text-ink">點擊或拖曳圖片到這裡</span>
-          <span className="mt-1 text-xs text-muted">壓縮、縮放、轉檔都在你的瀏覽器處理，不會上傳</span>
+          <span className="mt-2 text-sm text-ink">{t.dropHere}</span>
+          <span className="mt-1 text-xs text-muted">{t.localOnly}</span>
         </label>
       ) : (
         <>
-          <div className="flex justify-center"><Tabs tabs={TABS} active={tab} onChange={setTab} /></div>
+          <div className="flex justify-center"><Tabs tabs={tabs} active={tab} onChange={setTab} /></div>
 
           {/* Controls */}
           <div className="mb-6 rounded-[var(--radius-card)] border border-edge bg-surface p-4">
             {tab === 'compress' && (
               <label className="block">
-                <span className="mb-1 flex justify-between text-sm text-ink"><span>品質</span><span className="text-muted">{Math.round(quality * 100)}%</span></span>
+                <span className="mb-1 flex justify-between text-sm text-ink"><span>{t.quality}</span><span className="text-muted">{Math.round(quality * 100)}%</span></span>
                 <input type="range" min={10} max={100} value={Math.round(quality * 100)} onChange={(e) => setQuality(Number(e.target.value) / 100)} className="w-full accent-[var(--color-accent)]" />
-                {src.type === 'image/png' && <p className="mt-1 text-xs text-muted">PNG 為無損格式，壓縮時會轉成 JPEG 才能縮小檔案。</p>}
+                {src.type === 'image/png' && <p className="mt-1 text-xs text-muted">{t.pngNote}</p>}
               </label>
             )}
 
             {tab === 'resize' && (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-1.5">
-                  {([['scale', '等比例 %'], ['width', '指定寬度'], ['height', '指定高度'], ['exact', '自訂寬高']] as [ResizeMode, string][]).map(([m, label]) => (
+                  {([['scale', t.modeScale], ['width', t.modeWidth], ['height', t.modeHeight], ['exact', t.modeExact]] as [ResizeMode, string][]).map(([m, label]) => (
                     <button key={m} onClick={() => setResizeMode(m)} className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${resizeMode === m ? 'border-accent bg-accent text-white' : 'border-edge bg-surface text-ink hover:border-accent'}`}>{label}</button>
                   ))}
                 </div>
                 {resizeMode === 'scale' && (
                   <label className="block">
-                    <span className="mb-1 flex justify-between text-sm text-ink"><span>縮放比例</span><span className="text-muted">{scale}%</span></span>
+                    <span className="mb-1 flex justify-between text-sm text-ink"><span>{t.scaleLabel}</span><span className="text-muted">{scale}%</span></span>
                     <input type="range" min={5} max={200} value={scale} onChange={(e) => setScale(Number(e.target.value))} className="w-full accent-[var(--color-accent)]" />
                   </label>
                 )}
                 {resizeMode === 'width' && (
-                  <label className="block"><span className="mb-1 block text-sm text-ink">寬度 (px)</span><input type="number" value={rw} onChange={(e) => setRw(Number(e.target.value))} className={inputClass} /></label>
+                  <label className="block"><span className="mb-1 block text-sm text-ink">{t.widthPx}</span><input type="number" value={rw} onChange={(e) => setRw(Number(e.target.value))} className={inputClass} /></label>
                 )}
                 {resizeMode === 'height' && (
-                  <label className="block"><span className="mb-1 block text-sm text-ink">高度 (px)</span><input type="number" value={rh} onChange={(e) => setRh(Number(e.target.value))} className={inputClass} /></label>
+                  <label className="block"><span className="mb-1 block text-sm text-ink">{t.heightPx}</span><input type="number" value={rh} onChange={(e) => setRh(Number(e.target.value))} className={inputClass} /></label>
                 )}
                 {resizeMode === 'exact' && (
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="block"><span className="mb-1 block text-sm text-ink">寬度 (px)</span><input type="number" value={rw} onChange={(e) => setRw(Number(e.target.value))} className={inputClass} /></label>
-                    <label className="block"><span className="mb-1 block text-sm text-ink">高度 (px)</span><input type="number" value={rh} onChange={(e) => setRh(Number(e.target.value))} className={inputClass} /></label>
+                    <label className="block"><span className="mb-1 block text-sm text-ink">{t.widthPx}</span><input type="number" value={rw} onChange={(e) => setRw(Number(e.target.value))} className={inputClass} /></label>
+                    <label className="block"><span className="mb-1 block text-sm text-ink">{t.heightPx}</span><input type="number" value={rh} onChange={(e) => setRh(Number(e.target.value))} className={inputClass} /></label>
                   </div>
                 )}
               </div>
@@ -211,18 +285,18 @@ export default function ImageStudio() {
               <div className="space-y-2 text-sm">
                 {exif?.hasExif ? (
                   <>
-                    <p className="text-ink">這張圖片內含 EXIF 中繼資料：</p>
+                    <p className="text-ink">{t.exifIntro}</p>
                     <ul className="space-y-1 text-muted">
-                      {exif.hasGps && <li className="font-semibold text-red-500">⚠️ GPS 位置（可精確定位拍攝地點）</li>}
-                      {(exif.make || exif.model) && <li>📷 相機：{[exif.make, exif.model].filter(Boolean).join(' ')}</li>}
-                      {exif.dateTime && <li>🕐 拍攝時間：{exif.dateTime}</li>}
-                      {!exif.hasGps && !exif.make && !exif.model && !exif.dateTime && <li>其他技術性欄位</li>}
+                      {exif.hasGps && <li className="font-semibold text-red-500">{t.exifGps}</li>}
+                      {(exif.make || exif.model) && <li>{t.exifCamera([exif.make, exif.model].filter(Boolean).join(' '))}</li>}
+                      {exif.dateTime && <li>{t.exifTime(exif.dateTime)}</li>}
+                      {!exif.hasGps && !exif.make && !exif.model && !exif.dateTime && <li>{t.exifOther}</li>}
                     </ul>
-                    <p className="text-green-600">✓ 右側「處理後」的版本已移除全部中繼資料，下載即可安心分享。</p>
+                    <p className="text-green-600">{t.exifCleaned}</p>
                   </>
                 ) : (
                   <p className="text-muted">
-                    未偵測到 EXIF 中繼資料（PNG／WebP 通常不帶）。處理後的版本無論如何都經過重新編碼，保證乾淨。
+                    {t.noExif}
                   </p>
                 )}
               </div>
@@ -237,7 +311,7 @@ export default function ImageStudio() {
                 </div>
                 {supportsQuality(format) && (
                   <label className="block">
-                    <span className="mb-1 flex justify-between text-sm text-ink"><span>品質</span><span className="text-muted">{Math.round(quality * 100)}%</span></span>
+                    <span className="mb-1 flex justify-between text-sm text-ink"><span>{t.quality}</span><span className="text-muted">{Math.round(quality * 100)}%</span></span>
                     <input type="range" min={10} max={100} value={Math.round(quality * 100)} onChange={(e) => setQuality(Number(e.target.value) / 100)} className="w-full accent-[var(--color-accent)]" />
                   </label>
                 )}
@@ -250,14 +324,14 @@ export default function ImageStudio() {
           {/* Before / After */}
           <div className="grid gap-4 sm:grid-cols-2">
             <figure className="rounded-[var(--radius-card)] border border-edge bg-surface p-3">
-              <img src={src.url} alt="原圖" className="mb-2 h-48 w-full rounded-lg object-contain" />
-              <figcaption className="text-center text-sm text-ink">原圖</figcaption>
+              <img src={src.url} alt={t.original} className="mb-2 h-48 w-full rounded-lg object-contain" />
+              <figcaption className="text-center text-sm text-ink">{t.original}</figcaption>
               <p className="text-center text-xs text-muted">{src.width}×{src.height} · {formatBytes(src.size)}</p>
-              {exif?.hasGps && <p className="mt-1 text-center text-xs font-semibold text-red-500">⚠️ 內含 GPS 位置（見「清除資訊」）</p>}
+              {exif?.hasGps && <p className="mt-1 text-center text-xs font-semibold text-red-500">{t.gpsBadge}</p>}
             </figure>
             <figure className="rounded-[var(--radius-card)] border border-edge bg-surface p-3">
-              {out ? <img src={out.url} alt="處理後" className="mb-2 h-48 w-full rounded-lg object-contain" /> : <div className="mb-2 flex h-48 items-center justify-center text-muted">處理中…</div>}
-              <figcaption className="text-center text-sm text-ink">處理後 {out ? `· ${out.ext.toUpperCase()}` : ''}</figcaption>
+              {out ? <img src={out.url} alt={t.processed} className="mb-2 h-48 w-full rounded-lg object-contain" /> : <div className="mb-2 flex h-48 items-center justify-center text-muted">{t.processing}</div>}
+              <figcaption className="text-center text-sm text-ink">{t.processed} {out ? `· ${out.ext.toUpperCase()}` : ''}</figcaption>
               <p className="text-center text-xs text-muted">{out ? `${out.width}×${out.height} · ${formatBytes(out.size)}` : '—'}</p>
             </figure>
           </div>
@@ -267,20 +341,20 @@ export default function ImageStudio() {
             <div className="text-sm text-ink">
               {out && Number.isFinite(reduction) && (
                 <span>
-                  檔案大小：{formatBytes(src.size)} → {formatBytes(out.size)}{' '}
+                  {t.sizeLine(formatBytes(src.size), formatBytes(out.size))}{' '}
                   <span className={reduction >= 0 ? 'text-green-600' : 'text-red-500'}>
-                    （{reduction >= 0 ? '減少' : '增加'} {Math.abs(reduction).toFixed(0)}%）
+                    {t.delta(reduction >= 0, Math.abs(reduction).toFixed(0))}
                   </span>
                 </span>
               )}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setSrc(null); setOut(null); setError(null); }} className="rounded-lg border border-edge bg-surface px-4 py-2.5 text-sm text-ink transition-colors hover:border-accent">
-                換一張
+                {t.another}
               </button>
               {out && (
                 <a href={out.url} download={out.name} className={`rounded-lg bg-accent px-5 py-2.5 text-sm text-white transition-colors hover:bg-[var(--color-accent-hover)] ${busy ? 'pointer-events-none opacity-60' : ''}`}>
-                  下載
+                  {t.download}
                 </a>
               )}
             </div>

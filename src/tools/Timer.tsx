@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatTime, remainingFraction, intervalAt, intervalTotalSec, type IntervalConfig } from '../lib/timer';
+import type { Locale } from '../lib/i18n';
 
 const RING_R = 100;
 const RING_C = 2 * Math.PI * RING_R;
@@ -7,7 +8,43 @@ const RING_C = 2 * Math.PI * RING_R;
 type Mode = 'countdown' | 'stopwatch' | 'intervals';
 const PRESETS = [1, 3, 5, 10];
 
-export default function Timer() {
+const L = {
+  zh: {
+    modeCountdown: '倒數',
+    modeStopwatch: '碼錶',
+    modeIntervals: '間歇',
+    done: '完成 💪',
+    stage: (set: number, sets: number, kind: 'work' | 'rest') => `第 ${set}/${sets} 組 · ${kind === 'work' ? '衝刺' : '休息'}`,
+    totalRemaining: (t: string) => `總剩餘 ${t}`,
+    preset: (m: number) => `${m} 分`,
+    workSec: '衝刺（秒）',
+    restSec: '休息（秒）',
+    sets: '組數',
+    start: '開始',
+    pause: '暫停',
+    reset: '重設',
+    hint: '切換階段會有提示音：進衝刺高音、進休息低音、全部完成三連音。訓練台間歇的好朋友。',
+  },
+  en: {
+    modeCountdown: 'Countdown',
+    modeStopwatch: 'Stopwatch',
+    modeIntervals: 'Intervals',
+    done: 'Done 💪',
+    stage: (set: number, sets: number, kind: 'work' | 'rest') => `Set ${set}/${sets} · ${kind === 'work' ? 'Work' : 'Rest'}`,
+    totalRemaining: (t: string) => `Total left ${t}`,
+    preset: (m: number) => `${m} min`,
+    workSec: 'Work (sec)',
+    restSec: 'Rest (sec)',
+    sets: 'Sets',
+    start: 'Start',
+    pause: 'Pause',
+    reset: 'Reset',
+    hint: 'A tone marks each phase change: high for work, low for rest, a triple beep when everything is done. A trainer-interval best friend.',
+  },
+} as const;
+
+export default function Timer({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [mode, setMode] = useState<Mode>('countdown');
   const [initial, setInitial] = useState(300);
   const [seconds, setSeconds] = useState(300); // countdown/stopwatch 的秒數；intervals 的經過秒
@@ -98,9 +135,9 @@ export default function Timer() {
   return (
     <div className="mx-auto max-w-sm text-center">
       <div className="mb-6 flex justify-center gap-2">
-        <button onClick={() => switchMode('countdown')} className={`${btn} ${mode === 'countdown' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>倒數</button>
-        <button onClick={() => switchMode('stopwatch')} className={`${btn} ${mode === 'stopwatch' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>碼錶</button>
-        <button onClick={() => switchMode('intervals')} className={`${btn} ${mode === 'intervals' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>間歇</button>
+        <button onClick={() => switchMode('countdown')} className={`${btn} ${mode === 'countdown' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>{t.modeCountdown}</button>
+        <button onClick={() => switchMode('stopwatch')} className={`${btn} ${mode === 'stopwatch' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>{t.modeStopwatch}</button>
+        <button onClick={() => switchMode('intervals')} className={`${btn} ${mode === 'intervals' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>{t.modeIntervals}</button>
       </div>
 
       <div className="relative mx-auto mb-6 h-60 w-60">
@@ -118,14 +155,14 @@ export default function Timer() {
         <div className={`absolute inset-0 flex flex-col items-center justify-center font-mono tabular-nums ${finished ? 'timer-done text-red-500' : low ? 'text-red-500' : 'text-ink'}`}>
           {mode === 'intervals' ? (
             ivDone ? (
-              <span className="font-serif text-3xl">完成 💪</span>
+              <span className="font-serif text-3xl">{t.done}</span>
             ) : iv ? (
               <>
                 <span className={`text-sm ${iv.kind === 'work' ? 'text-accent' : 'text-muted'}`}>
-                  第 {iv.set}/{cfg.sets} 組 · {iv.kind === 'work' ? '衝刺' : '休息'}
+                  {t.stage(iv.set, cfg.sets, iv.kind)}
                 </span>
                 <span className="text-5xl">{formatTime(iv.remaining)}</span>
-                <span className="text-xs text-muted">總剩餘 {formatTime(iv.totalRemaining)}</span>
+                <span className="text-xs text-muted">{t.totalRemaining(formatTime(iv.totalRemaining))}</span>
               </>
             ) : (
               <span className="text-5xl">{formatTime(ivTotal)}</span>
@@ -139,7 +176,7 @@ export default function Timer() {
       {mode === 'countdown' && (
         <div className="mb-6 flex flex-wrap justify-center gap-2">
           {PRESETS.map((m) => (
-            <button key={m} onClick={() => setPreset(m)} className={`${btn} bg-surface text-ink hover:border-accent`}>{m} 分</button>
+            <button key={m} onClick={() => setPreset(m)} className={`${btn} bg-surface text-ink hover:border-accent`}>{t.preset(m)}</button>
           ))}
         </div>
       )}
@@ -147,15 +184,15 @@ export default function Timer() {
       {mode === 'intervals' && (
         <div className="mb-6 flex flex-wrap items-end justify-center gap-3 text-sm text-ink">
           <label className="block">
-            <span className="mb-1 block text-xs text-muted">衝刺（秒）</span>
+            <span className="mb-1 block text-xs text-muted">{t.workSec}</span>
             <input type="number" min={1} value={cfg.workSec} onChange={(e) => updateCfg({ workSec: Math.max(1, Number(e.target.value)) })} className="w-20 rounded border border-edge bg-surface px-2 py-1 text-center" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-muted">休息（秒）</span>
+            <span className="mb-1 block text-xs text-muted">{t.restSec}</span>
             <input type="number" min={0} value={cfg.restSec} onChange={(e) => updateCfg({ restSec: Math.max(0, Number(e.target.value)) })} className="w-20 rounded border border-edge bg-surface px-2 py-1 text-center" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs text-muted">組數</span>
+            <span className="mb-1 block text-xs text-muted">{t.sets}</span>
             <input type="number" min={1} value={cfg.sets} onChange={(e) => updateCfg({ sets: Math.max(1, Number(e.target.value)) })} className="w-16 rounded border border-edge bg-surface px-2 py-1 text-center" />
           </label>
         </div>
@@ -167,12 +204,12 @@ export default function Timer() {
           disabled={(mode === 'countdown' && seconds === 0) || (mode === 'intervals' && (ivDone || ivTotal === 0))}
           className="rounded-lg bg-accent px-6 py-2 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
         >
-          {running ? '暫停' : '開始'}
+          {running ? t.pause : t.start}
         </button>
-        <button onClick={reset} className={`${btn} bg-surface text-ink hover:border-accent`}>重設</button>
+        <button onClick={reset} className={`${btn} bg-surface text-ink hover:border-accent`}>{t.reset}</button>
       </div>
       {mode === 'intervals' && (
-        <p className="mt-4 text-xs text-muted">切換階段會有提示音：進衝刺高音、進休息低音、全部完成三連音。訓練台間歇的好朋友。</p>
+        <p className="mt-4 text-xs text-muted">{t.hint}</p>
       )}
     </div>
   );
