@@ -52,12 +52,20 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await page.getByLabel('地標 1 名稱').fill('西寶補給站');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/西寶補給站 \d+m/);
 
-  // 展開爬坡細部圖 → 每公里坡度方塊（8 塊 @5%）與獨立下載鈕
+  // 展開爬坡細部圖（行內展開在該列正下方）→ 每公里坡度方塊與獨立下載鈕
   await page.getByLabel('爬坡 1 細部圖').click();
   const detail = page.getByRole('img', { name: '爬坡細部圖' });
   await expect(detail).toBeVisible();
   await expect(detail).toContainText('5.0%');
   await expect(page.getByRole('button', { name: '下載細部圖 PNG' })).toBeVisible();
+  // 細部圖必須在表格內（行內展開），不是掛在頁面底部
+  await expect(page.getByRole('table').getByRole('img', { name: '爬坡細部圖' })).toBeVisible();
+
+  // 浮水印預設開啟且在圖内；關閉核取方塊後消失
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText('tiglet.vercel.app');
+  await page.getByLabel('顯示站名浮水印').uncheck();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText('tiglet.vercel.app');
+  await page.getByLabel('顯示站名浮水印').check();
   // 8km@5% → 分數 ~40000 → 二級坡（表格徽章；細部圖副標也含「2 級坡」故用 exact）
   await expect(page.getByText('2 級', { exact: true })).toBeVisible();
 

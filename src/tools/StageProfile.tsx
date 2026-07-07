@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import type { Locale } from '../lib/i18n';
 import {
@@ -42,13 +42,13 @@ const L = {
     titleLabel: '路線標題（會畫進圖裡）',
     titlePlaceholder: '例如：2026-07-06 西進武嶺',
     themeLabel: '出圖主題',
+    watermarkLabel: '顯示站名浮水印',
     svgAria: '賽段剖面圖',
     titleFallback: '我的路線',
     svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ 總爬升 ${ascent} m ・ 海拔 ${minE}–${maxE} m`,
     bandLabel: (b: { id: string; label: string }) => b.label,
     start: '起點',
     finish: '終點',
-    climbBadgeFallback: '坡',
     climbNameOnChart: (name: string, ele: number) => `${name}（海拔 ${ele}m）`,
     detailAria: '爬坡細部圖',
     detailFallback: '爬坡細部圖',
@@ -100,13 +100,13 @@ const L = {
     titleLabel: 'Route title (drawn into the image)',
     titlePlaceholder: 'e.g. 2026-07-06 Wuling West',
     themeLabel: 'Theme',
+    watermarkLabel: 'Show site watermark',
     svgAria: 'Stage profile chart',
     titleFallback: 'My route',
     svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ ${ascent} m total gain ・ elev. ${minE}–${maxE} m`,
     bandLabel: (b: { id: string; label: string }) => (b.id === 'down' ? 'Downhill' : b.label),
     start: 'Start',
     finish: 'Finish',
-    climbBadgeFallback: 'NC',
     climbNameOnChart: (name: string, ele: number) => `${name} (elev. ${ele}m)`,
     detailAria: 'Climb detail chart',
     detailFallback: 'Climb detail',
@@ -223,7 +223,7 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t, watermark }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict; watermark: boolean }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
   const eles = samples.map((s) => s.ele);
@@ -270,7 +270,12 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
       <text x={ML} y={50} fill={theme.muted} fontSize={12} fontFamily="system-ui, sans-serif">
         {t.svgSubtitle(totalKm.toFixed(1), Math.round(ascent), Math.round(minE), Math.round(maxE))}
       </text>
-      <text x={W - MR} y={30} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
+      {/* 站名浮水印：右下角、低調灰字（可由 UI 關閉） */}
+      {watermark && (
+        <text x={W - MR} y={H - 8} fill={theme.muted} fontSize={10} textAnchor="end" fontFamily="system-ui, sans-serif" opacity={0.8}>
+          tiglet.vercel.app
+        </text>
+      )}
 
       {/* 坡度色階圖例（右上，會一起輸出進 PNG） */}
       <g fontFamily="system-ui, sans-serif" fontSize={9}>
@@ -378,25 +383,38 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
           );
         })}
 
-      {/* 爬坡徽章（山頂），有命名時把名字畫進圖裡 */}
+      {/* 爬坡標注（山頂）：有分級才掛徽章；未分級的坡只有在命名時才以小標記上圖，
+          避免起伏路線被一排「坡」字旗淹沒 */}
       {climbs.map((c, i) => {
+        const name = climbNames[i]?.trim();
+        if (!c.category && !name) return null;
         const cx = x(c.endM);
         const cy = y(c.topEle);
         const color = catColor(c.category);
-        const label = c.category ?? t.climbBadgeFallback;
-        const name = climbNames[i]?.trim();
         return (
           <g key={i} fontFamily="system-ui, sans-serif">
-            <line x1={cx} y1={cy} x2={cx} y2={cy - 26} stroke={color} strokeWidth={1.5} />
-            <rect x={cx - 15} y={cy - 46} width={30} height={20} rx={4} fill={color} />
-            <text x={cx} y={cy - 32} fill="#fff" fontSize={12} fontWeight={700} textAnchor="middle">{label}</text>
-            <text x={cx} y={cy - 52} fill={theme.ink} fontSize={10} textAnchor="middle">
-              {(c.lengthM / 1000).toFixed(1)}km @ {c.avgGradientPct.toFixed(1)}%
-            </text>
-            {name && (
-              <text x={cx} y={cy - 64} fill={theme.ink} fontSize={12} fontWeight={700} textAnchor="middle">
-                {t.climbNameOnChart(name, Math.round(c.topEle))}
-              </text>
+            {c.category ? (
+              <>
+                <line x1={cx} y1={cy} x2={cx} y2={cy - 26} stroke={color} strokeWidth={1.5} />
+                <rect x={cx - 15} y={cy - 46} width={30} height={20} rx={4} fill={color} />
+                <text x={cx} y={cy - 32} fill="#fff" fontSize={12} fontWeight={700} textAnchor="middle">{c.category}</text>
+                <text x={cx} y={cy - 52} fill={theme.ink} fontSize={10} textAnchor="middle">
+                  {(c.lengthM / 1000).toFixed(1)}km @ {c.avgGradientPct.toFixed(1)}%
+                </text>
+                {name && (
+                  <text x={cx} y={cy - 64} fill={theme.ink} fontSize={12} fontWeight={700} textAnchor="middle">
+                    {t.climbNameOnChart(name, Math.round(c.topEle))}
+                  </text>
+                )}
+              </>
+            ) : (
+              <>
+                <line x1={cx} y1={cy} x2={cx} y2={cy - 16} stroke={theme.muted} strokeWidth={1} />
+                <circle cx={cx} cy={cy - 18} r={2.5} fill={theme.ink} />
+                <text x={cx} y={cy - 26} fill={theme.ink} fontSize={11} fontWeight={700} textAnchor="middle">
+                  {t.climbNameOnChart(name!, Math.round(c.topEle))}
+                </text>
+              </>
             )}
           </g>
         );
@@ -413,7 +431,7 @@ const DMR = 24;
 const DMT = 56;
 const DMB = 34;
 
-function ClimbDetail({ profile, climb, name, theme, t }: { profile: Profile; climb: Climb; name: string; theme: ProfileTheme; t: Dict }) {
+function ClimbDetail({ profile, climb, name, theme, t, watermark }: { profile: Profile; climb: Climb; name: string; theme: ProfileTheme; t: Dict; watermark: boolean }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const blocks = climbKmBlocks(profile.samples, climb);
   const minE = blocks[0].startEle;
@@ -434,7 +452,11 @@ function ClimbDetail({ profile, climb, name, theme, t }: { profile: Profile; cli
         <text x={DML} y={44} fill={theme.muted} fontSize={11} fontFamily="system-ui, sans-serif">
           {t.detailSub((climb.lengthM / 1000).toFixed(1), Math.round(climb.gainM), climb.avgGradientPct.toFixed(1), climb.category)}
         </text>
-        <text x={DW - DMR} y={26} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
+        {watermark && (
+          <text x={DW - DMR} y={DH - 6} fill={theme.muted} fontSize={10} textAnchor="end" fontFamily="system-ui, sans-serif" opacity={0.8}>
+            tiglet.vercel.app
+          </text>
+        )}
 
         {blocks.map((b, i) => {
           const x1 = x(b.startM);
@@ -490,6 +512,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   const [themeIdx, setThemeIdx] = useState(0);
+  const [watermark, setWatermark] = useState(true);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -583,9 +606,13 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 {locale === 'en' ? THEME_EN[th.id] ?? th.label : th.label}
               </button>
             ))}
+            <label className="ml-4 flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} />
+              {t.watermarkLabel}
+            </label>
           </div>
 
-          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} t={t} />
+          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} t={t} watermark={watermark} />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label={t.statDistance} value={`${stats.km} km`} />
@@ -610,7 +637,8 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 </thead>
                 <tbody>
                   {climbs.map((c, i) => (
-                    <tr key={i} className="border-b border-edge last:border-0">
+                    <Fragment key={i}>
+                    <tr className="border-b border-edge last:border-0">
                       <td className="px-3 py-2">
                         <span className="rounded px-2 py-0.5 text-xs font-bold text-white" style={{ background: catColor(c.category) }}>
                           {t.catBadge(c.category)}
@@ -639,14 +667,19 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                         </button>
                       </td>
                     </tr>
+                    {detailIdx === i && (
+                      // 細部圖直接展開在該列正下方，不用滑到頁面底部
+                      <tr className="border-b border-edge last:border-0">
+                        <td colSpan={7} className="bg-bg px-3 py-4">
+                          <ClimbDetail profile={profile} climb={c} name={climbNames[i] ?? ''} theme={theme} t={t} watermark={watermark} />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
-
-          {detailIdx !== null && climbs[detailIdx] && (
-            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} theme={theme} t={t} />
           )}
 
           <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
