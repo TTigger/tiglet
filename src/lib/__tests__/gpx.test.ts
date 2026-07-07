@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   parseGpx,
   parseGpxName,
+  parseGpxWaypoints,
+  locateOnTrack,
   haversineM,
   buildProfile,
   totalAscentM,
@@ -135,6 +137,42 @@ describe('gradientBuckets', () => {
     expect(buckets[0].distanceM).toBeGreaterThan(3000);
     // 陡坡帶要存在
     expect(buckets[buckets.length - 1].distanceM).toBeGreaterThan(1000);
+  });
+});
+
+describe('parseGpxWaypoints + locateOnTrack (航點自動標注)', () => {
+  // 在合成路線（沿緯度北行）中途插一個 <wpt>
+  function gpxWithWpt(): string {
+    const base = syntheticGpx([[4000, 5]]);
+    // 2km 處的緯度 ≈ 25.0 + 2000/111320
+    const midLat = (25.0 + 2000 / 111_320).toFixed(7);
+    const wpts = `<wpt lat="${midLat}" lon="121.5"><name>中途補給</name></wpt>` +
+      `<wpt lat="30.0" lon="100.0"><name>離線很遠的點</name></wpt>` +
+      `<wpt lat="25.001" lon="121.5"></wpt>`; // 沒名字的略過
+    return base.replace('<trk>', `${wpts}<trk>`);
+  }
+
+  it('reads named waypoints only', () => {
+    const wpts = parseGpxWaypoints(gpxWithWpt());
+    expect(wpts.map((w) => w.name)).toEqual(['中途補給', '離線很遠的點']);
+  });
+
+  it('locates an on-route waypoint at the right distance', () => {
+    const points = parseGpx(gpxWithWpt());
+    const wpts = parseGpxWaypoints(gpxWithWpt());
+    const loc = locateOnTrack(points, wpts[0].lat, wpts[0].lon);
+    expect(loc).not.toBeNull();
+    expect(loc!.distanceM).toBeGreaterThan(1800);
+    expect(loc!.distanceM).toBeLessThan(2200);
+  });
+
+  it('rejects waypoints far off the route', () => {
+    const points = parseGpx(gpxWithWpt());
+    expect(locateOnTrack(points, 30.0, 100.0)).toBeNull();
+  });
+
+  it('gpx without waypoints → empty list', () => {
+    expect(parseGpxWaypoints(syntheticGpx([[500, 0]]))).toEqual([]);
   });
 });
 

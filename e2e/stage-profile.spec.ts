@@ -73,6 +73,24 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   expect(download.suggestedFilename()).toBe('測試爬坡.png');
 });
 
+test('GPX 內建航點自動帶入地標並畫進圖', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  // 在 6km 處（緯度 25.0 + 6000/111320）插一個 <wpt>
+  const midLat = (25.0 + 6000 / 111_320).toFixed(7);
+  const gpx = syntheticGpx().replace('<trk>', `<wpt lat="${midLat}" lon="121.5"><name>山腰補給</name></wpt><trk>`);
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'ride.gpx',
+    mimeType: 'application/gpx+xml',
+    buffer: Buffer.from(gpx, 'utf-8'),
+  });
+
+  // 自動帶入地標編輯列（約 6km）且畫進 SVG
+  await expect(page.getByLabel('地標 1 名稱')).toHaveValue('山腰補給');
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/山腰補給 \d+m/);
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
