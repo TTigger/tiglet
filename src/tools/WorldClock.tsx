@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CITIES, offsetMinutes, offsetLabel, diffLabel, formatInZone, zonedTimeToInstant } from '../lib/timezone';
+import CopyButton from '../components/CopyButton';
 
 const HOME = 'Asia/Taipei';
 const DEFAULT_CITIES = ['Asia/Taipei', 'Asia/Tokyo', 'Europe/London', 'America/New_York'];
@@ -95,7 +96,10 @@ export default function WorldClock() {
           </select>
           <span>是</span>
         </div>
-        <p className="mt-4 font-mono text-2xl tabular-nums text-ink">{converted}</p>
+        <p className="mt-4 flex items-center gap-3 font-mono text-2xl tabular-nums text-ink">
+          {converted}
+          {converted !== '—' && <CopyButton value={`${labelOf(fromZone)} ${time} = ${labelOf(toZone)} ${converted}`} />}
+        </p>
         {convDiff && <p className="mt-1 text-sm text-muted">{labelOf(toZone)} 比 {labelOf(fromZone)} {convDiff}</p>}
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { textStats } from '../lib/textStats';
+import CopyButton from '../components/CopyButton';
 
 function fmtMinutes(min: number): string {
   if (min === 0) return '—';
@@ -39,6 +40,13 @@ export default function WordCount() {
         <Stat label="預估閱讀" value={fmtMinutes(s.readingMinutes)} />
         <Stat label="中英合計" value={String(s.cjkChars + s.latinWords)} />
       </div>
+      {text && (
+        <div className="flex justify-end">
+          <CopyButton
+            value={`字元 ${s.chars}（不含空白 ${s.charsNoSpace}）・中文 ${s.cjkChars} 字・英文 ${s.latinWords} 詞・${s.lines} 行 ${s.paragraphs} 段`}
+          />
+        </div>
+      )}
       <p className="text-xs text-muted">閱讀時間以中文約 350 字／分、英文約 220 詞／分估算。文字只在你的瀏覽器處理。</p>
     </div>
   );

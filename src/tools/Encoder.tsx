@@ -47,13 +47,24 @@ function CodecPanel({ codec }: { codec: Codec }) {
           </button>
         ))}
       </div>
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        rows={5}
-        placeholder={mode === 'encode' ? '輸入原始文字…' : '貼上要解碼的內容…'}
-        className={areaClass}
-      />
+      <div className="relative">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          rows={5}
+          placeholder={mode === 'encode' ? '輸入原始文字…' : '貼上要解碼的內容…'}
+          aria-label={mode === 'encode' ? '原始文字' : '待解碼內容'}
+          className={areaClass}
+        />
+        {!input && (
+          <button
+            onClick={() => setInput(mode === 'encode' ? '公路車 Tiglet 讚 🚴' : '5YWs6Lev6LuKIFRpZ2xldCDorpog8J+atA==')}
+            className="absolute right-3 top-3 text-xs text-muted hover:text-accent"
+          >
+            填入範例
+          </button>
+        )}
+      </div>
       <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
         <div className="flex items-center justify-between border-b border-edge px-4 py-2">
           <span className="text-sm text-muted">結果</span>

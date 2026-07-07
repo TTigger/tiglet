@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import Tabs from '../components/Tabs';
+import CopyButton from '../components/CopyButton';
 import TreeView, { type TreeViewNode } from '../components/TreeView';
 import { extractOutline, mdStats, type OutlineNode } from '../lib/markdown';
 import { textStats } from '../lib/textStats';
@@ -113,12 +114,18 @@ export default function MarkdownStudio() {
           </div>
 
           {tab === 'preview' && (
-            <div className="rounded-[var(--radius-card)] border border-edge bg-surface px-6 py-4">
-              {renderError ? (
-                <p className="text-sm text-red-500">{renderError}</p>
-              ) : (
-                <div ref={previewRef} className="md-preview max-h-[36rem] overflow-y-auto" dangerouslySetInnerHTML={{ __html: html }} />
-              )}
+            <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
+              <div className="flex items-center justify-between border-b border-edge px-4 py-2">
+                <span className="text-sm text-muted">預覽</span>
+                {html && !renderError && <CopyButton value={html} />}
+              </div>
+              <div className="px-6 py-4">
+                {renderError ? (
+                  <p className="text-sm text-red-500">{renderError}</p>
+                ) : (
+                  <div ref={previewRef} className="md-preview max-h-[36rem] overflow-y-auto" dangerouslySetInnerHTML={{ __html: html }} />
+                )}
+              </div>
             </div>
           )}
 

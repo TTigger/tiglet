@@ -1,5 +1,14 @@
 import { useState } from 'react';
 import { diffLines, diffChars, diffStats, type DiffPart } from '../lib/diff';
+import CopyButton from '../components/CopyButton';
+
+const SAMPLE_A = '週六團騎路線\n清晨六點出發\n風櫃嘴集合\n下滑到金山吃鴨肉';
+const SAMPLE_B = '週日團騎路線\n清晨五點半出發\n風櫃嘴集合\n加碼陽金P字道\n下滑到金山吃鴨肉';
+
+// 差異結果轉成可貼上的統一格式文字
+function diffText(parts: DiffPart[]): string {
+  return parts.map((p) => `${p.type === 'add' ? '+' : p.type === 'del' ? '-' : ' '} ${p.text}`).join('\n');
+}
 
 const areaClass =
   'w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 font-mono text-sm text-ink outline-none focus:border-accent';
@@ -65,7 +74,7 @@ export default function TextDiff() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="relative grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-sm text-muted">原始文字 A</span>
           <textarea value={a} onChange={(e) => setA(e.target.value)} rows={8} placeholder="貼上舊版文字…" className={areaClass} />
@@ -74,6 +83,14 @@ export default function TextDiff() {
           <span className="mb-1 block text-sm text-muted">比較文字 B</span>
           <textarea value={b} onChange={(e) => setB(e.target.value)} rows={8} placeholder="貼上新版文字…" className={areaClass} />
         </label>
+        {!hasInput && (
+          <button
+            onClick={() => { setA(SAMPLE_A); setB(SAMPLE_B); }}
+            className="absolute right-0 -top-1 text-xs text-muted hover:text-accent"
+          >
+            填入範例
+          </button>
+        )}
       </div>
 
       {hasInput && (
@@ -82,6 +99,7 @@ export default function TextDiff() {
             <span className="text-muted">差異結果</span>
             <span className="text-green-600">＋{stats.added}</span>
             <span className="text-red-500">−{stats.deleted}</span>
+            {(stats.added > 0 || stats.deleted > 0) && <CopyButton value={diffText(parts)} className="ml-auto" />}
           </div>
           <div className="max-h-[32rem] overflow-y-auto py-2">
             {stats.added === 0 && stats.deleted === 0 ? (

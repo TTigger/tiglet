@@ -10,6 +10,8 @@ export default defineConfig({
     // silently dropping whole test files from the run; threads has been
     // reliable (and faster) here.
     pool: 'threads',
+    // 本機限制平行度以免記憶體吃緊時 OOM；CI 用預設
+    maxWorkers: process.env.CI ? undefined : 2,
     exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });
