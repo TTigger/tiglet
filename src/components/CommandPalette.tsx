@@ -43,11 +43,19 @@ export default function CommandPalette() {
     else if (e.key === 'Enter') {
       const t = results[index];
       if (t) window.location.href = t.path;
+    } else if (e.key === 'Tab') {
+      e.preventDefault(); // focus trap：面板內唯一可聚焦的是輸入框，用方向鍵選取
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-[15vh]" onClick={() => setOpen(false)}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="快速跳到工具"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 pt-[15vh]"
+      onClick={() => setOpen(false)}
+    >
       <div className="w-full max-w-lg rounded-[var(--radius-card)] border border-edge bg-surface shadow-xl" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
@@ -55,16 +63,23 @@ export default function CommandPalette() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onInputKey}
           placeholder="跳到工具…"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="palette-listbox"
+          aria-activedescendant={results[index] ? `palette-opt-${results[index].id}` : undefined}
+          aria-label="搜尋工具"
           className="w-full rounded-t-[var(--radius-card)] bg-transparent px-4 py-3 text-ink outline-none placeholder:text-muted"
         />
-        <ul className="max-h-72 overflow-y-auto border-t border-edge p-2">
+        <span role="status" className="sr-only">{results.length} 個結果</span>
+        <ul id="palette-listbox" role="listbox" aria-label="工具清單" className="max-h-72 overflow-y-auto border-t border-edge p-2">
           {results.length === 0 ? (
             <li className="px-3 py-4 text-center text-sm text-muted">找不到工具</li>
           ) : (
             results.map((t, i) => (
-              <li key={t.id}>
+              <li key={t.id} id={`palette-opt-${t.id}`} role="option" aria-selected={i === index}>
                 <a
                   href={t.path}
+                  tabIndex={-1}
                   onMouseEnter={() => setIndex(i)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${i === index ? 'bg-accent text-white' : 'text-ink'}`}
                 >

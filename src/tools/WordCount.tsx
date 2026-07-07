@@ -28,6 +28,7 @@ export default function WordCount() {
         onChange={(e) => setText(e.target.value)}
         rows={10}
         placeholder="貼上或輸入文字，統計即時更新…"
+        aria-label="要統計的文字"
         className="w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
