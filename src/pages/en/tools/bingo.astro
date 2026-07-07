@@ -8,5 +8,5 @@ const tool = tools.find((t) => t.id === 'bingo')!;
 <BaseLayout title={`${tool.titleEn} — Tiglet`} description={tool.descriptionEn} toolId={tool.id}>
   <a href="/en/" class="text-sm text-muted hover:text-accent">← All tools</a>
   <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">{tool.titleEn}</h1>
-  <Bingo client:visible />
+  <Bingo client:visible locale="en" />
 </BaseLayout>

@@ -1,14 +1,31 @@
 import { evaluate } from '../lib/expression';
 import { useUrlState } from '../lib/urlState';
 import CopyButton from '../components/CopyButton';
+import type { Locale } from '../lib/i18n';
 
-export default function TextCalculator() {
+const L = {
+  zh: {
+    placeholder: '輸入算式，例如 12*3+(4/2)',
+    ariaInput: '算式',
+    fillExample: '填入範例',
+    invalid: '無效的算式',
+  },
+  en: {
+    placeholder: 'Enter an expression, e.g. 12*3+(4/2)',
+    ariaInput: 'Expression',
+    fillExample: 'Fill example',
+    invalid: 'Invalid expression',
+  },
+} as const;
+
+export default function TextCalculator({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [input, setInput] = useUrlState('q', '');
   let result = '';
   let error = '';
   if (input.trim()) {
     try { result = String(evaluate(input)); }
-    catch (e) { error = e instanceof Error ? e.message : '無效的算式'; }
+    catch (e) { error = e instanceof Error ? e.message : t.invalid; }
   }
 
   return (
@@ -18,8 +35,8 @@ export default function TextCalculator() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="輸入算式，例如 12*3+(4/2)"
-          aria-label="算式"
+          placeholder={t.placeholder}
+          aria-label={t.ariaInput}
           className="w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 font-mono text-lg text-ink outline-none focus:border-accent"
         />
         {!input && (
@@ -27,7 +44,7 @@ export default function TextCalculator() {
             onClick={() => setInput('(180*4.5+250)/3')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-accent"
           >
-            填入範例
+            {t.fillExample}
           </button>
         )}
       </div>

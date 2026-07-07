@@ -1,8 +1,11 @@
 import { useReducer, useEffect } from 'react';
 import { reducer, initialCalc, type Operator } from '../lib/calculator';
 import CopyButton from '../components/CopyButton';
+import type { Locale } from '../lib/i18n';
 
-export default function Calculator() {
+// 鍵面皆為符號（C ± ⌫ ÷ …），兩種語系相同；接收 locale 以符合雙語 island 介面
+export default function Calculator({ locale = 'zh' }: { locale?: Locale }) {
+  void locale;
   const [state, dispatch] = useReducer(reducer, initialCalc);
 
   useEffect(() => {
