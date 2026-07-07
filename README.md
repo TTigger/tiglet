@@ -47,6 +47,7 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 | Utilities | **Color Converter** | Convert between HEX / RGB / HSL live, with a picker and one-tap copy |
 | Utilities | **Color Extractor** | Upload an image and pull out its dominant colors (median cut), copyable as HEX/RGB |
 | Utilities | **Image Studio** | Compress, resize, and convert (JPEG / PNG / WebP) with a before/after comparison |
+| Utilities | **Taiwan ID Validator** | Checksum validation for Taiwan national IDs and business numbers (2023 rule), with test-number generators |
 | Cycling | **Gear Calculator** | Road-bike drivetrain math — gear ratio matrix, cadence→speed tables, A/B setup comparison, and derailleur capacity check, all shareable via URL |
 | Cycling | **Ride Fuel** | Convert your bike computer's kJ into kcal burned and food equivalents, with carbs-per-hour fueling and sweat-rate hydration guidance |
 | Cycling | **FTP Zones** | Coggan 7-zone power table with sweet spot, W/kg level reference, and heart-rate zones (LTHR or max-HR method) |

@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TwId from '../../tools/TwId.tsx';
+---
+<BaseLayout title="台灣證號 — Tiglet" description="身分證字號與統一編號的檢查碼驗證（統編採 112 年新制），附開發測試用的號碼產生器，全部在瀏覽器本機執行。" toolId="tw-id">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">台灣證號</h1>
+  <TwId client:visible />
+</BaseLayout>
