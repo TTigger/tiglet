@@ -1,9 +1,30 @@
 import { useState } from 'react';
 import { emptyBoard, winner, winningLine, isDraw, bestMove, type Board, type Player } from '../lib/ticTacToe';
+import { type Locale } from '../lib/i18n';
 
 type Mode = 'pvp' | 'cpu';
 
-export default function TicTacToe() {
+const L = {
+  zh: {
+    wins: (p: Player) => `${p} 獲勝！`,
+    draw: '平手！',
+    turn: (p: Player) => `輪到 ${p}`,
+    pvp: '雙人',
+    cpu: '對電腦',
+    restart: '重新開始',
+  },
+  en: {
+    wins: (p: Player) => `${p} wins!`,
+    draw: 'Draw!',
+    turn: (p: Player) => `${p}'s turn`,
+    pvp: '2 players',
+    cpu: 'vs computer',
+    restart: 'Restart',
+  },
+} as const;
+
+export default function TicTacToe({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [board, setBoard] = useState<Board>(emptyBoard());
   const [turn, setTurn] = useState<Player>('X');
   const [mode, setMode] = useState<Mode>('pvp');
@@ -12,7 +33,7 @@ export default function TicTacToe() {
   const win = winner(board);
   const draw = isDraw(board);
   const over = win !== null || draw;
-  const status = win ? `${win} 獲勝！` : draw ? '平手！' : `輪到 ${turn}`;
+  const status = win ? t.wins(win) : draw ? t.draw : t.turn(turn);
 
   function play(i: number) {
     if (board[i] || over) return;
@@ -38,8 +59,8 @@ export default function TicTacToe() {
   return (
     <div className="mx-auto max-w-xs">
       <div className="mb-4 flex gap-2">
-        <button onClick={() => reset('pvp')} className={`flex-1 rounded-lg border border-edge py-2 text-sm ${mode === 'pvp' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>雙人</button>
-        <button onClick={() => reset('cpu')} className={`flex-1 rounded-lg border border-edge py-2 text-sm ${mode === 'cpu' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>對電腦</button>
+        <button onClick={() => reset('pvp')} className={`flex-1 rounded-lg border border-edge py-2 text-sm ${mode === 'pvp' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>{t.pvp}</button>
+        <button onClick={() => reset('cpu')} className={`flex-1 rounded-lg border border-edge py-2 text-sm ${mode === 'cpu' ? 'bg-accent text-white' : 'bg-surface text-ink'}`}>{t.cpu}</button>
       </div>
       <p className="mb-4 text-center font-serif text-xl text-ink">{status}</p>
       <div className="grid grid-cols-3 gap-2">
@@ -59,7 +80,7 @@ export default function TicTacToe() {
           );
         })}
       </div>
-      <button onClick={() => reset()} className="mt-4 w-full rounded-lg border border-edge bg-surface py-2 text-sm text-accent hover:bg-accent hover:text-white">重新開始</button>
+      <button onClick={() => reset()} className="mt-4 w-full rounded-lg border border-edge bg-surface py-2 text-sm text-accent hover:bg-accent hover:text-white">{t.restart}</button>
     </div>
   );
 }

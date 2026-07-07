@@ -1,16 +1,35 @@
 import { useState } from 'react';
 import { parseOptions, pickIndex } from '../lib/wheel';
 import { useUrlState } from '../lib/urlState';
+import { type Locale } from '../lib/i18n';
 
 const COLORS = ['#D97757', '#E0A05E', '#C9923F', '#B5743E', '#E08A5F', '#CFA15A', '#D2864A', '#BC8A4E'];
 const R = 140, CX = 150, CY = 150;
+
+const L = {
+  zh: {
+    wheelAria: '抽籤輪盤',
+    spinning: '轉動中…',
+    spin: '開始抽籤',
+    placeholder: '每行一個選項，例如：\n珍珠奶茶\n美式咖啡\n綠茶',
+    count: (n: number) => `目前 ${n} 個選項。複製本頁網址即可把選項分享給別人。`,
+  },
+  en: {
+    wheelAria: 'Spinner wheel',
+    spinning: 'Spinning…',
+    spin: 'Spin the wheel',
+    placeholder: 'One option per line, e.g.:\nBubble tea\nAmericano\nGreen tea',
+    count: (n: number) => `${n} option${n === 1 ? '' : 's'} so far. Copy this page URL to share them with others.`,
+  },
+} as const;
 
 function point(phi: number): [number, number] {
   const rad = (phi * Math.PI) / 180;
   return [CX + R * Math.sin(rad), CY - R * Math.cos(rad)];
 }
 
-export default function Wheel() {
+export default function Wheel({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [text, setText] = useUrlState('o', '');
   const options = parseOptions(text);
   const [rotation, setRotation] = useState(0);
@@ -37,7 +56,7 @@ export default function Wheel() {
     <div className="mx-auto max-w-md">
       <div className="relative mb-6 flex justify-center">
         <div className="absolute -top-1 z-10 h-0 w-0 border-x-8 border-t-[16px] border-x-transparent border-t-accent" />
-        <svg width="300" height="300" viewBox="0 0 300 300" role="img" aria-label="抽籤輪盤">
+        <svg width="300" height="300" viewBox="0 0 300 300" role="img" aria-label={t.wheelAria}>
           <g style={{ transformOrigin: '150px 150px', transform: `rotate(${rotation}deg)`, transition: spinning ? 'transform 4s cubic-bezier(0.17,0.67,0.12,0.99)' : 'none' }}>
             {n === 0 ? (
               <circle cx={CX} cy={CY} r={R} fill="#E8E4D9" />
@@ -72,17 +91,17 @@ export default function Wheel() {
       {winner && <p key={winner + winnerIdx} className="die-pop mb-4 text-center font-serif text-2xl text-ink">🎉 {winner}</p>}
 
       <button onClick={spin} disabled={n < 2 || spinning} className="mb-4 w-full rounded-lg bg-accent py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50">
-        {spinning ? '轉動中…' : '開始抽籤'}
+        {spinning ? t.spinning : t.spin}
       </button>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={6}
-        placeholder={'每行一個選項，例如：\n珍珠奶茶\n美式咖啡\n綠茶'}
+        placeholder={t.placeholder}
         className="w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
-      <p className="mt-2 text-sm text-muted">目前 {n} 個選項。複製本頁網址即可把選項分享給別人。</p>
+      <p className="mt-2 text-sm text-muted">{t.count(n)}</p>
     </div>
   );
 }
