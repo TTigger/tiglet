@@ -11,6 +11,7 @@ import {
   type ImageFormat,
   type ResizeMode,
 } from '../lib/image';
+import { readExifSummary, type ExifSummary } from '../lib/exif';
 
 interface Source {
   url: string;
@@ -57,6 +58,7 @@ const TABS = [
   { id: 'compress', label: '壓縮' },
   { id: 'resize', label: '縮放' },
   { id: 'convert', label: '格式轉換' },
+  { id: 'privacy', label: '清除資訊' },
 ];
 
 export default function ImageStudio() {
@@ -66,6 +68,7 @@ export default function ImageStudio() {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exif, setExif] = useState<ExifSummary | null>(null);
 
   // params
   const [quality, setQuality] = useState(0.8);
@@ -90,6 +93,8 @@ export default function ImageStudio() {
   function loadFile(file: File) {
     if (!file.type.startsWith('image/')) { setError('請選擇圖片檔。'); return; }
     setError(null);
+    setExif(null);
+    file.arrayBuffer().then((b) => setExif(readExifSummary(b))).catch(() => setExif(null));
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
@@ -125,6 +130,9 @@ export default function ImageStudio() {
         } else if (tab === 'compress') {
           // keep original format unless it's PNG (lossless → re-encode as JPEG to actually shrink)
           mime = src.type === 'image/png' ? 'image/jpeg' : safeMime(src.type);
+        } else if (tab === 'privacy') {
+          // 原尺寸、近無損重編碼——canvas 重畫本身就會剝掉全部中繼資料
+          q = 0.95;
         }
 
         const { blob, width: ow, height: oh } = await render(src.img, width, height, mime, q);
@@ -199,6 +207,27 @@ export default function ImageStudio() {
               </div>
             )}
 
+            {tab === 'privacy' && (
+              <div className="space-y-2 text-sm">
+                {exif?.hasExif ? (
+                  <>
+                    <p className="text-ink">這張圖片內含 EXIF 中繼資料：</p>
+                    <ul className="space-y-1 text-muted">
+                      {exif.hasGps && <li className="font-semibold text-red-500">⚠️ GPS 位置（可精確定位拍攝地點）</li>}
+                      {(exif.make || exif.model) && <li>📷 相機：{[exif.make, exif.model].filter(Boolean).join(' ')}</li>}
+                      {exif.dateTime && <li>🕐 拍攝時間：{exif.dateTime}</li>}
+                      {!exif.hasGps && !exif.make && !exif.model && !exif.dateTime && <li>其他技術性欄位</li>}
+                    </ul>
+                    <p className="text-green-600">✓ 右側「處理後」的版本已移除全部中繼資料，下載即可安心分享。</p>
+                  </>
+                ) : (
+                  <p className="text-muted">
+                    未偵測到 EXIF 中繼資料（PNG／WebP 通常不帶）。處理後的版本無論如何都經過重新編碼，保證乾淨。
+                  </p>
+                )}
+              </div>
+            )}
+
             {tab === 'convert' && (
               <div className="space-y-3">
                 <div className="flex gap-1.5">
@@ -224,6 +253,7 @@ export default function ImageStudio() {
               <img src={src.url} alt="原圖" className="mb-2 h-48 w-full rounded-lg object-contain" />
               <figcaption className="text-center text-sm text-ink">原圖</figcaption>
               <p className="text-center text-xs text-muted">{src.width}×{src.height} · {formatBytes(src.size)}</p>
+              {exif?.hasGps && <p className="mt-1 text-center text-xs font-semibold text-red-500">⚠️ 內含 GPS 位置（見「清除資訊」）</p>}
             </figure>
             <figure className="rounded-[var(--radius-card)] border border-edge bg-surface p-3">
               {out ? <img src={out.url} alt="處理後" className="mb-2 h-48 w-full rounded-lg object-contain" /> : <div className="mb-2 flex h-48 items-center justify-center text-muted">處理中…</div>}
