@@ -7,9 +7,9 @@ Built with Astro + React islands + Tailwind CSS v4, deployed on Vercel.
 
 > 🔗 **Live demo:** [tiglet.vercel.app](https://tiglet.vercel.app)
 
-Almost everything runs entirely in your browser. No accounts, no servers, no tracking —
-your input never leaves your device. (The one exception is the currency converter, which
-fetches public exchange rates; see [Privacy](#privacy).)
+Almost everything runs entirely in your browser. No accounts, no cookies, no ads —
+your input never leaves your device. (The exceptions: the currency converter fetches
+public exchange rates, and anonymous page views are counted; see [Privacy](#privacy).)
 
 ## Features
 
@@ -131,9 +131,13 @@ Tiglet is essentially 100% client-side. The raffle's Excel import, the QR genera
 image compressor/resizer, the color extractor, and every other tool process your data
 locally in the browser — nothing is uploaded.
 
-The **only** outbound network request is in the **Converter**, which fetches public
-exchange rates from [open.er-api.com](https://open.er-api.com). No user input is sent —
-it simply downloads the latest rate table.
+Outbound network requests are limited to two things:
+
+- The **Converter** fetches public exchange rates from
+  [open.er-api.com](https://open.er-api.com). No user input is sent — it simply
+  downloads the latest rate table.
+- **Vercel Web Analytics** collects anonymous, cookie-less page-view counts
+  (no personal data, no cross-site tracking, nothing you type is ever sent).
 
 ---
 
