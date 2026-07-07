@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { isFavorite, toggleFavorite } from '../lib/storage';
+import { isFavorite, toggleFavorite, FAV_CHANGE_EVENT } from '../lib/storage';
 
 export default function FavoriteButton({ id, onChange }: { id: string; onChange?: (fav: boolean) => void }) {
   const [fav, setFav] = useState(false);
 
-  useEffect(() => { setFav(isFavorite(id)); }, [id]);
+  useEffect(() => {
+    const sync = () => setFav(isFavorite(id));
+    sync();
+    window.addEventListener(FAV_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(FAV_CHANGE_EVENT, sync);
+  }, [id]);
 
   function onClick(e: ReactMouseEvent) {
     e.preventDefault();
@@ -13,6 +18,7 @@ export default function FavoriteButton({ id, onChange }: { id: string; onChange?
     const next = toggleFavorite(id).includes(id);
     setFav(next);
     onChange?.(next);
+    window.dispatchEvent(new Event(FAV_CHANGE_EVENT));
   }
 
   return (
