@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import type { Locale } from '../lib/i18n';
 import {
   parseGpx,
   parseGpxName,
@@ -23,6 +24,135 @@ export interface Waypoint {
   km: string; // 使用者輸入的公里數（字串保留輸入狀態）
   name: string;
 }
+
+const L = {
+  zh: {
+    upload: '上傳 GPX 檔案',
+    uploadNote: '檔案只在你的瀏覽器解析，不會上傳到任何伺服器。',
+    exportSummary: '怎麼從 Strava / Garmin / Bryton 匯出 GPX？',
+    guideSep: '：',
+    guides: [
+      { app: 'Strava', steps: '活動頁 → 右上「⋯」→「匯出 GPX」。路線（Routes）頁也有相同選項。' },
+      { app: 'Garmin Connect', steps: '活動頁 → 右上齒輪 →「匯出至 GPX」。' },
+      { app: 'Bryton Active', steps: '活動 → 分享 → 匯出 GPX 檔案。' },
+      { app: 'Wahoo', steps: 'ELEMNT app → 騎乘紀錄 → 分享 → 匯出 .gpx（或從 Wahoo Cloud 下載）。' },
+      { app: 'Komoot', steps: '路線頁 →「⋯」→「匯出 GPX」。' },
+    ],
+    readError: '無法讀取這個 GPX 檔',
+    titleLabel: '路線標題（會畫進圖裡）',
+    titlePlaceholder: '例如：2026-07-06 西進武嶺',
+    themeLabel: '出圖主題',
+    svgAria: '賽段剖面圖',
+    titleFallback: '我的路線',
+    svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ 總爬升 ${ascent} m ・ 海拔 ${minE}–${maxE} m`,
+    bandLabel: (b: { id: string; label: string }) => b.label,
+    start: '起點',
+    finish: '終點',
+    climbBadgeFallback: '坡',
+    climbNameOnChart: (name: string, ele: number) => `${name}（海拔 ${ele}m）`,
+    detailAria: '爬坡細部圖',
+    detailFallback: '爬坡細部圖',
+    detailSub: (km: string, gain: number, avg: string, cat: string | null) =>
+      `${km} km ・ 爬升 ${gain} m ・ 平均 ${avg}%${cat ? ` ・ ${cat === 'HC' ? 'HC' : `${cat} 級`}坡` : ''}`,
+    detailDownload: '下載細部圖 PNG',
+    statDistance: '總距離',
+    statAscent: '總爬升',
+    statSteepest: '最陡 1km',
+    statClimbs: '偵測爬坡',
+    climbsValue: (n: number) => `${n} 段`,
+    thClimb: '爬坡',
+    thName: '名稱（會畫進圖裡）',
+    thStart: '起點',
+    thLength: '長度',
+    thGain: '爬升',
+    thAvgGrad: '平均坡度',
+    thDetail: '細部',
+    catBadge: (cat: string | null) => (cat ? (cat === 'HC' ? 'HC' : `${cat} 級`) : '未分級'),
+    climbNamePlaceholder: '例如：風櫃嘴',
+    climbNameAria: (i: number) => `爬坡 ${i} 名稱`,
+    climbDetailAria: (i: number) => `爬坡 ${i} 細部圖`,
+    collapse: '收合 ▴',
+    expandDetail: '細部圖 ▾',
+    wpSection: '地標／補給站（會以斜排標注畫進圖裡）',
+    wpAdd: '＋ 新增地標',
+    wpHint: '例如：西寶 26km、大禹嶺 87km——標出補給站或途經城鎮，做出台灣 KOM 式的賽段圖。 若 GPX 檔內含航點（Komoot／RWGPS 匯出常見），上傳時會自動帶入。',
+    wpKmAria: (i: number) => `地標 ${i} 公里數`,
+    wpNameAria: (i: number) => `地標 ${i} 名稱`,
+    wpNamePlaceholder: '例如：西寶補給站',
+    wpDeleteAria: (i: number) => `刪除地標 ${i}`,
+    downloadPng: '下載 PNG 圖片',
+    bucketChip: (label: string, km: string) => `坡度 ${label}：${km} km`,
+    footnote: '爬坡分級採「長度 × 平均坡度」通用分數制（≥8000 四級 … ≥80000 HC），與正式賽事官方分級可能不同。 海拔已做平滑處理以消除 GPS 雜訊。',
+  },
+  en: {
+    upload: 'Upload GPX file',
+    uploadNote: 'The file is parsed entirely in your browser — never uploaded to any server.',
+    exportSummary: 'How do I export GPX from Strava / Garmin / Bryton?',
+    guideSep: ': ',
+    guides: [
+      { app: 'Strava', steps: 'Activity page → top-right "⋯" → "Export GPX". Routes pages have the same option.' },
+      { app: 'Garmin Connect', steps: 'Activity page → top-right gear icon → "Export to GPX".' },
+      { app: 'Bryton Active', steps: 'Activity → Share → Export GPX file.' },
+      { app: 'Wahoo', steps: 'ELEMNT app → ride history → Share → export .gpx (or download from Wahoo Cloud).' },
+      { app: 'Komoot', steps: 'Route page → "⋯" → "Export GPX".' },
+    ],
+    readError: 'Could not read this GPX file',
+    titleLabel: 'Route title (drawn into the image)',
+    titlePlaceholder: 'e.g. 2026-07-06 Wuling West',
+    themeLabel: 'Theme',
+    svgAria: 'Stage profile chart',
+    titleFallback: 'My route',
+    svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ ${ascent} m total gain ・ elev. ${minE}–${maxE} m`,
+    bandLabel: (b: { id: string; label: string }) => (b.id === 'down' ? 'Downhill' : b.label),
+    start: 'Start',
+    finish: 'Finish',
+    climbBadgeFallback: 'NC',
+    climbNameOnChart: (name: string, ele: number) => `${name} (elev. ${ele}m)`,
+    detailAria: 'Climb detail chart',
+    detailFallback: 'Climb detail',
+    detailSub: (km: string, gain: number, avg: string, cat: string | null) =>
+      `${km} km ・ ${gain} m gain ・ ${avg}% avg${cat ? ` ・ ${cat === 'HC' ? 'HC' : `Cat ${cat}`} climb` : ''}`,
+    detailDownload: 'Download detail PNG',
+    statDistance: 'Distance',
+    statAscent: 'Total ascent',
+    statSteepest: 'Steepest 1km',
+    statClimbs: 'Climbs detected',
+    climbsValue: (n: number) => `${n}`,
+    thClimb: 'Climb',
+    thName: 'Name (drawn into image)',
+    thStart: 'Start',
+    thLength: 'Length',
+    thGain: 'Gain',
+    thAvgGrad: 'Avg gradient',
+    thDetail: 'Detail',
+    catBadge: (cat: string | null) => (cat ? (cat === 'HC' ? 'HC' : `Cat ${cat}`) : 'Uncat.'),
+    climbNamePlaceholder: "e.g. Alpe d'Huez",
+    climbNameAria: (i: number) => `Climb ${i} name`,
+    climbDetailAria: (i: number) => `Climb ${i} detail chart`,
+    collapse: 'Collapse ▴',
+    expandDetail: 'Detail ▾',
+    wpSection: 'Waypoints / feed stations (drawn into the image as angled labels)',
+    wpAdd: '＋ Add waypoint',
+    wpHint: 'e.g. Xibao 26km, Dayuling 87km — mark feed stations or towns along the way for a Taiwan KOM-style stage chart. If the GPX contains waypoints (common in Komoot / RWGPS exports), they are filled in automatically on upload.',
+    wpKmAria: (i: number) => `Waypoint ${i} km`,
+    wpNameAria: (i: number) => `Waypoint ${i} name`,
+    wpNamePlaceholder: 'e.g. feed station',
+    wpDeleteAria: (i: number) => `Delete waypoint ${i}`,
+    downloadPng: 'Download PNG',
+    bucketChip: (label: string, km: string) => `Gradient ${label}: ${km} km`,
+    footnote: 'Climb categories use the common "length × average gradient" score (≥8000 Cat 4 … ≥80000 HC) and may differ from official race categorization. Elevation is smoothed to remove GPS noise.',
+  },
+} as const;
+
+type Dict = (typeof L)[Locale];
+
+// 出圖主題名稱的英文（按鈕 UI 用；id 對映，不動 THEMES 本體）
+const THEME_EN: Record<string, string> = {
+  tiglet: 'Tiglet warm',
+  tour: 'Tour yellow',
+  giro: 'Giro pink',
+  vuelta: 'Vuelta red',
+};
 
 // 檔案完全在本機解析；SVG 用固定色票（非 CSS 變數），
 // 匯出的 PNG 才不會受深淺色主題影響。出圖主題只換底/墨/點綴色，
@@ -93,7 +223,7 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null> }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
   const eles = samples.map((s) => s.ele);
@@ -133,12 +263,12 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
   }
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="賽段剖面圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t.svgAria} className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
       <rect x={0} y={0} width={W} height={H} fill={theme.bg} />
       {/* 標題與總覽 */}
-      <text x={ML} y={30} fill={theme.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || '我的路線'}</text>
+      <text x={ML} y={30} fill={theme.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || t.titleFallback}</text>
       <text x={ML} y={50} fill={theme.muted} fontSize={12} fontFamily="system-ui, sans-serif">
-        {totalKm.toFixed(1)} km ・ 總爬升 {Math.round(ascent)} m ・ 海拔 {Math.round(minE)}–{Math.round(maxE)} m
+        {t.svgSubtitle(totalKm.toFixed(1), Math.round(ascent), Math.round(minE), Math.round(maxE))}
       </text>
       <text x={W - MR} y={30} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
@@ -149,7 +279,7 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
           return (
             <g key={b.id}>
               <rect x={bx} y={42} width={9} height={9} rx={2} fill={b.color} />
-              <text x={bx + 12} y={50} fill={theme.muted}>{b.label}</text>
+              <text x={bx + 12} y={50} fill={theme.muted}>{t.bandLabel(b)}</text>
             </g>
           );
         })}
@@ -210,14 +340,14 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
               <line x1={sx} y1={sy} x2={sx} y2={sy - 24} stroke={theme.ink} strokeWidth={1.5} />
               <path d={`M${sx},${sy - 24} L${sx + 15},${sy - 19} L${sx},${sy - 14} Z`} fill={theme.accent} />
               <circle cx={sx} cy={sy} r={2.5} fill={theme.ink} />
-              <text x={sx} y={baseY + 18} fill={theme.ink} textAnchor="start" fontWeight={600}>起點</text>
+              <text x={sx} y={baseY + 18} fill={theme.ink} textAnchor="start" fontWeight={600}>{t.start}</text>
 
               {/* 終點：旗桿＋格紋旗（向左展開，避免出界） */}
               <line x1={fx} y1={fy} x2={fx} y2={fy - 26} stroke={theme.ink} strokeWidth={1.5} />
               <rect x={fx - sq * 4} y={fy - 26} width={sq * 4} height={sq * 3} fill={theme.bg} stroke={theme.ink} strokeWidth={0.75} />
               {checks}
               <circle cx={fx} cy={fy} r={2.5} fill={theme.ink} />
-              <text x={fx} y={baseY + 18} fill={theme.ink} textAnchor="end" fontWeight={600}>終點</text>
+              <text x={fx} y={baseY + 18} fill={theme.ink} textAnchor="end" fontWeight={600}>{t.finish}</text>
             </>
           );
         })()}
@@ -253,7 +383,7 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
         const cx = x(c.endM);
         const cy = y(c.topEle);
         const color = catColor(c.category);
-        const label = c.category ?? '坡';
+        const label = c.category ?? t.climbBadgeFallback;
         const name = climbNames[i]?.trim();
         return (
           <g key={i} fontFamily="system-ui, sans-serif">
@@ -265,7 +395,7 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
             </text>
             {name && (
               <text x={cx} y={cy - 64} fill={theme.ink} fontSize={12} fontWeight={700} textAnchor="middle">
-                {name}（海拔 {Math.round(c.topEle)}m）
+                {t.climbNameOnChart(name, Math.round(c.topEle))}
               </text>
             )}
           </g>
@@ -283,7 +413,7 @@ const DMR = 24;
 const DMT = 56;
 const DMB = 34;
 
-function ClimbDetail({ profile, climb, name, theme }: { profile: Profile; climb: Climb; name: string; theme: ProfileTheme }) {
+function ClimbDetail({ profile, climb, name, theme, t }: { profile: Profile; climb: Climb; name: string; theme: ProfileTheme; t: Dict }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const blocks = climbKmBlocks(profile.samples, climb);
   const minE = blocks[0].startEle;
@@ -294,16 +424,15 @@ function ClimbDetail({ profile, climb, name, theme }: { profile: Profile; climb:
   const y = (e: number) => DMT + (1 - (e - minE) / ((maxE - minE) * 1.12)) * ph;
   const baseY = DMT + ph;
   const labelEvery = blocks.length > 14 ? 2 : 1;
-  const displayName = name.trim() || '爬坡細部圖';
+  const displayName = name.trim() || t.detailFallback;
 
   return (
     <div className="space-y-2">
-      <svg ref={svgRef} viewBox={`0 0 ${DW} ${DH}`} role="img" aria-label="爬坡細部圖" className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
+      <svg ref={svgRef} viewBox={`0 0 ${DW} ${DH}`} role="img" aria-label={t.detailAria} className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
         <rect x={0} y={0} width={DW} height={DH} fill={theme.bg} />
         <text x={DML} y={26} fill={theme.ink} fontSize={18} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{displayName}</text>
         <text x={DML} y={44} fill={theme.muted} fontSize={11} fontFamily="system-ui, sans-serif">
-          {(climb.lengthM / 1000).toFixed(1)} km ・ 爬升 {Math.round(climb.gainM)} m ・ 平均 {climb.avgGradientPct.toFixed(1)}%
-          {climb.category ? ` ・ ${climb.category === 'HC' ? 'HC' : `${climb.category} 級`}坡` : ''}
+          {t.detailSub((climb.lengthM / 1000).toFixed(1), Math.round(climb.gainM), climb.avgGradientPct.toFixed(1), climb.category)}
         </text>
         <text x={DW - DMR} y={26} fill={theme.accent} fontSize={11} textAnchor="end" fontFamily="system-ui, sans-serif">tiglet.vercel.app</text>
 
@@ -338,7 +467,7 @@ function ClimbDetail({ profile, climb, name, theme }: { profile: Profile; climb:
         onClick={() => svgRef.current && downloadSvgAsPng(svgRef.current, DW, DH, `${displayName}.png`, theme.bg)}
         className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
       >
-        下載細部圖 PNG
+        {t.detailDownload}
       </button>
     </div>
   );
@@ -353,15 +482,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-const EXPORT_GUIDES: Array<{ app: string; steps: string }> = [
-  { app: 'Strava', steps: '活動頁 → 右上「⋯」→「匯出 GPX」。路線（Routes）頁也有相同選項。' },
-  { app: 'Garmin Connect', steps: '活動頁 → 右上齒輪 →「匯出至 GPX」。' },
-  { app: 'Bryton Active', steps: '活動 → 分享 → 匯出 GPX 檔案。' },
-  { app: 'Wahoo', steps: 'ELEMNT app → 騎乘紀錄 → 分享 → 匯出 .gpx（或從 Wahoo Cloud 下載）。' },
-  { app: 'Komoot', steps: '路線頁 →「⋯」→「匯出 GPX」。' },
-];
-
-export default function StageProfile() {
+export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [profile, setProfile] = useState<Profile | null>(null);
   const [climbs, setClimbs] = useState<Climb[]>([]);
   const [climbNames, setClimbNames] = useState<string[]>([]);
@@ -395,7 +517,7 @@ export default function StageProfile() {
       setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
       setProfile(null);
-      setError(err instanceof Error ? err.message : '無法讀取這個 GPX 檔');
+      setError(err instanceof Error ? err.message : t.readError);
     } finally {
       e.target.value = '';
     }
@@ -410,7 +532,7 @@ export default function StageProfile() {
         km: (profile.totalDistanceM / 1000).toFixed(1),
         ascent: Math.round(totalAscentM(profile.samples)).toString(),
         steep: steepestKm(profile.samples).gradientPct.toFixed(1),
-        climbs: climbs.length.toString(),
+        climbs: climbs.length,
       }
     : null;
   const buckets = profile ? gradientBuckets(profile.samples) : null;
@@ -419,17 +541,17 @@ export default function StageProfile() {
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="rounded-[var(--radius-card)] border border-dashed border-edge bg-surface p-4 text-center">
         <label className="cursor-pointer text-accent hover:underline">
-          上傳 GPX 檔案
+          {t.upload}
           <input type="file" accept=".gpx" onChange={onFile} className="hidden" />
         </label>
-        <p className="mt-1 text-xs text-muted">檔案只在你的瀏覽器解析，不會上傳到任何伺服器。</p>
+        <p className="mt-1 text-xs text-muted">{t.uploadNote}</p>
       </div>
 
       <details className="rounded-[var(--radius-card)] border border-edge bg-surface p-4 text-sm">
-        <summary className="cursor-pointer text-muted hover:text-accent">怎麼從 Strava / Garmin / Bryton 匯出 GPX？</summary>
+        <summary className="cursor-pointer text-muted hover:text-accent">{t.exportSummary}</summary>
         <ul className="mt-3 space-y-2">
-          {EXPORT_GUIDES.map((g) => (
-            <li key={g.app}><span className="font-semibold text-ink">{g.app}</span><span className="text-muted">：{g.steps}</span></li>
+          {t.guides.map((g) => (
+            <li key={g.app}><span className="font-semibold text-ink">{g.app}</span><span className="text-muted">{t.guideSep}{g.steps}</span></li>
           ))}
         </ul>
       </details>
@@ -439,37 +561,37 @@ export default function StageProfile() {
       {profile && stats && buckets && (
         <>
           <label className="block">
-            <span className="mb-1 block text-sm text-muted">路線標題（會畫進圖裡）</span>
+            <span className="mb-1 block text-sm text-muted">{t.titleLabel}</span>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="例如：2026-07-06 西進武嶺"
+              placeholder={t.titlePlaceholder}
               className="w-full rounded-lg border border-edge bg-surface px-3 py-2 text-ink outline-none focus:border-accent"
             />
           </label>
 
           <div className="flex flex-wrap items-center gap-1">
-            <span className="mr-2 text-sm text-muted">出圖主題</span>
-            {THEMES.map((t, i) => (
+            <span className="mr-2 text-sm text-muted">{t.themeLabel}</span>
+            {THEMES.map((th, i) => (
               <button
-                key={t.id}
+                key={th.id}
                 onClick={() => setThemeIdx(i)}
                 aria-pressed={themeIdx === i}
                 className={`flex items-center gap-1.5 rounded-md border border-edge px-3 py-1 text-sm ${themeIdx === i ? 'bg-accent text-white' : 'text-muted hover:text-ink'}`}
               >
-                <span className="inline-block h-3 w-3 rounded-full border border-black/10" style={{ background: t.accent }} />
-                {t.label}
+                <span className="inline-block h-3 w-3 rounded-full border border-black/10" style={{ background: th.accent }} />
+                {locale === 'en' ? THEME_EN[th.id] ?? th.label : th.label}
               </button>
             ))}
           </div>
 
-          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} />
+          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} t={t} />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <StatCard label="總距離" value={`${stats.km} km`} />
-            <StatCard label="總爬升" value={`${stats.ascent} m`} />
-            <StatCard label="最陡 1km" value={`${stats.steep}%`} />
-            <StatCard label="偵測爬坡" value={`${stats.climbs} 段`} />
+            <StatCard label={t.statDistance} value={`${stats.km} km`} />
+            <StatCard label={t.statAscent} value={`${stats.ascent} m`} />
+            <StatCard label={t.statSteepest} value={`${stats.steep}%`} />
+            <StatCard label={t.statClimbs} value={t.climbsValue(stats.climbs)} />
           </div>
 
           {climbs.length > 0 && (
@@ -477,13 +599,13 @@ export default function StageProfile() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-edge">
-                    <th className="px-3 py-2 text-left font-normal text-muted">爬坡</th>
-                    <th className="px-3 py-2 text-left font-normal text-muted">名稱（會畫進圖裡）</th>
-                    <th className="px-3 py-2 text-right font-normal text-muted">起點</th>
-                    <th className="px-3 py-2 text-right font-normal text-muted">長度</th>
-                    <th className="px-3 py-2 text-right font-normal text-muted">爬升</th>
-                    <th className="px-3 py-2 text-right font-normal text-muted">平均坡度</th>
-                    <th className="px-3 py-2 text-right font-normal text-muted">細部</th>
+                    <th className="px-3 py-2 text-left font-normal text-muted">{t.thClimb}</th>
+                    <th className="px-3 py-2 text-left font-normal text-muted">{t.thName}</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">{t.thStart}</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">{t.thLength}</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">{t.thGain}</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">{t.thAvgGrad}</th>
+                    <th className="px-3 py-2 text-right font-normal text-muted">{t.thDetail}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -491,15 +613,15 @@ export default function StageProfile() {
                     <tr key={i} className="border-b border-edge last:border-0">
                       <td className="px-3 py-2">
                         <span className="rounded px-2 py-0.5 text-xs font-bold text-white" style={{ background: catColor(c.category) }}>
-                          {c.category ? (c.category === 'HC' ? 'HC' : `${c.category} 級`) : '未分級'}
+                          {t.catBadge(c.category)}
                         </span>
                       </td>
                       <td className="px-3 py-2">
                         <input
                           value={climbNames[i] ?? ''}
                           onChange={(e) => setClimbNames((prev) => prev.map((n, j) => (j === i ? e.target.value : n)))}
-                          placeholder={`例如：風櫃嘴`}
-                          aria-label={`爬坡 ${i + 1} 名稱`}
+                          placeholder={t.climbNamePlaceholder}
+                          aria-label={t.climbNameAria(i + 1)}
                           className="w-28 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
                         />
                       </td>
@@ -510,10 +632,10 @@ export default function StageProfile() {
                       <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => setDetailIdx(detailIdx === i ? null : i)}
-                          aria-label={`爬坡 ${i + 1} 細部圖`}
+                          aria-label={t.climbDetailAria(i + 1)}
                           className={`text-sm ${detailIdx === i ? 'text-accent' : 'text-muted hover:text-accent'}`}
                         >
-                          {detailIdx === i ? '收合 ▴' : '細部圖 ▾'}
+                          {detailIdx === i ? t.collapse : t.expandDetail}
                         </button>
                       </td>
                     </tr>
@@ -524,24 +646,21 @@ export default function StageProfile() {
           )}
 
           {detailIdx !== null && climbs[detailIdx] && (
-            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} theme={theme} />
+            <ClimbDetail profile={profile} climb={climbs[detailIdx]} name={climbNames[detailIdx] ?? ''} theme={theme} t={t} />
           )}
 
           <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-ink">地標／補給站（會以斜排標注畫進圖裡）</span>
+              <span className="text-sm text-ink">{t.wpSection}</span>
               <button
                 onClick={() => setWaypoints((prev) => [...prev, { km: '', name: '' }])}
                 className="text-sm text-accent hover:underline"
               >
-                ＋ 新增地標
+                {t.wpAdd}
               </button>
             </div>
             {waypoints.length === 0 ? (
-              <p className="text-xs text-muted">
-                例如：西寶 26km、大禹嶺 87km——標出補給站或途經城鎮，做出台灣 KOM 式的賽段圖。
-                若 GPX 檔內含航點（Komoot／RWGPS 匯出常見），上傳時會自動帶入。
-              </p>
+              <p className="text-xs text-muted">{t.wpHint}</p>
             ) : (
               <div className="space-y-2">
                 {waypoints.map((w, i) => (
@@ -551,20 +670,20 @@ export default function StageProfile() {
                       value={w.km}
                       onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, km: e.target.value } : p)))}
                       placeholder="26"
-                      aria-label={`地標 ${i + 1} 公里數`}
+                      aria-label={t.wpKmAria(i + 1)}
                       className="w-20 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
                     />
                     <span className="text-xs text-muted">km</span>
                     <input
                       value={w.name}
                       onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, name: e.target.value } : p)))}
-                      placeholder="例如：西寶補給站"
-                      aria-label={`地標 ${i + 1} 名稱`}
+                      placeholder={t.wpNamePlaceholder}
+                      aria-label={t.wpNameAria(i + 1)}
                       className="flex-1 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
                     />
                     <button
                       onClick={() => setWaypoints((prev) => prev.filter((_, j) => j !== i))}
-                      aria-label={`刪除地標 ${i + 1}`}
+                      aria-label={t.wpDeleteAria(i + 1)}
                       className="text-sm text-muted hover:text-red-500"
                     >
                       ✕
@@ -577,21 +696,18 @@ export default function StageProfile() {
 
           <div className="flex flex-wrap items-center gap-3">
             <button onClick={downloadPng} className="rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-              下載 PNG 圖片
+              {t.downloadPng}
             </button>
             <div className="flex flex-wrap gap-2 text-xs text-muted">
               {buckets.map((b) => (
                 <span key={b.label} className="rounded border border-edge px-2 py-1">
-                  坡度 {b.label}：{(b.distanceM / 1000).toFixed(1)} km
+                  {t.bucketChip(b.label, (b.distanceM / 1000).toFixed(1))}
                 </span>
               ))}
             </div>
           </div>
 
-          <p className="text-xs text-muted">
-            爬坡分級採「長度 × 平均坡度」通用分數制（≥8000 四級 … ≥80000 HC），與正式賽事官方分級可能不同。
-            海拔已做平滑處理以消除 GPS 雜訊。
-          </p>
+          <p className="text-xs text-muted">{t.footnote}</p>
         </>
       )}
     </div>

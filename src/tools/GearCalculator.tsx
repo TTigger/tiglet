@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Tabs from '../components/Tabs';
 import { useUrlState } from '../lib/urlState';
+import type { Locale } from '../lib/i18n';
 import {
   gearTable,
   gearRatio,
@@ -18,6 +19,126 @@ import {
   type Drivetrain,
   type TeethPreset,
 } from '../lib/gear';
+
+const L = {
+  zh: {
+    custom: '自訂…',
+    presetAria: (label: string) => `${label}預設`,
+    teethAria: (label: string) => `${label}齒數`,
+    teethFormat: (fb: string) => `格式：齒數以 - 分隔，例如 ${fb}`,
+    metricRatio: '齒比',
+    headCogRing: '飛輪＼大盤',
+    matrixNote: 'Development＝踩一圈曲柄前進的公尺數；gear inches 為傳統齒比單位。',
+    cadence: '迴轉速',
+    speedNote: '單位 km/h，假設無滑動的理想傳動。',
+    setupB: '設定 B（設定 A 用上方共用設定）',
+    ringB: '大盤 B',
+    cogB: '飛輪 B',
+    metric: '指標',
+    colA: (s: string) => `A（${s}）`,
+    colB: (s: string) => `B（${s}）`,
+    rowMaxRatio: '最重齒比',
+    rowMinRatio: '最輕齒比（越小越好爬）',
+    rowRange: '齒比範圍',
+    rowTopSpeed: '90rpm 極速',
+    rowLowSpeed: '90rpm 最低速',
+    rowAvgStep: '平均級距',
+    rowMaxStep: '最大斷差',
+    compareNote: '橘色為該指標較優的一方；級距越小換檔越順。含大小盤全部組合（未去除重疊檔）。',
+    ring: '大盤',
+    cog: '飛輪',
+    ratioLabel: '齒比 ',
+    rpmToSpeed: '迴轉速 → 時速',
+    speedToRpm: '時速 → 所需迴轉速',
+    rdSpec: '後變速器規格',
+    rdOption: (label: string, maxCog: number, capacity: number) => `${label}（最大 ${maxCog}T／容量 ${capacity}T）`,
+    pass: '通過',
+    over: '超出',
+    capacityNeed: '總容量需求（大盤差＋飛輪差）',
+    maxCogLabel: '最大飛輪齒',
+    okMsg: '✓ 此組合與該變速器相容',
+    ngMsg: '✗ 超出變速器規格，換檔可能異常或損壞',
+    capacityNote: '實際上限以原廠規格表為準；部分變速器可小幅超出但不受保固。',
+    tabMatrix: '齒比表',
+    tabSpeed: '速度對照',
+    tabCompare: 'A/B 比較',
+    tabQuick: '快算',
+    tabCapacity: '容量檢查',
+    wheelLabel: '輪組（周長 mm）',
+    wheelPresetAria: '輪組預設',
+    wheelAria: '輪組周長',
+    wheelOption: (label: string, mm: number) => `${label}（${mm}mm）`,
+    circError: '請輸入 1000–2600 mm',
+    shareNote: '複製本頁網址即可把整組設定分享給車友。',
+  },
+  en: {
+    custom: 'Custom…',
+    presetAria: (label: string) => `${label} preset`,
+    teethAria: (label: string) => `${label} teeth`,
+    teethFormat: (fb: string) => `Format: teeth separated by -, e.g. ${fb}`,
+    metricRatio: 'Ratio',
+    headCogRing: 'Cog ＼ Ring',
+    matrixNote: 'Development = metres travelled per crank revolution; gear inches is the traditional gearing unit.',
+    cadence: 'Cadence',
+    speedNote: 'Values in km/h, assuming an ideal drivetrain with no slip.',
+    setupB: 'Setup B (Setup A uses the shared settings above)',
+    ringB: 'Chainrings B',
+    cogB: 'Cassette B',
+    metric: 'Metric',
+    colA: (s: string) => `A (${s})`,
+    colB: (s: string) => `B (${s})`,
+    rowMaxRatio: 'Hardest gear ratio',
+    rowMinRatio: 'Easiest gear ratio (lower climbs better)',
+    rowRange: 'Gear range',
+    rowTopSpeed: 'Top speed @90rpm',
+    rowLowSpeed: 'Lowest speed @90rpm',
+    rowAvgStep: 'Average step',
+    rowMaxStep: 'Largest jump',
+    compareNote: 'Orange marks the better side for each metric; smaller steps shift smoother. Includes every chainring × cog combination (overlapping gears not removed).',
+    ring: 'Chainring',
+    cog: 'Cog',
+    ratioLabel: 'Ratio ',
+    rpmToSpeed: 'Cadence → speed',
+    speedToRpm: 'Speed → required cadence',
+    rdSpec: 'Rear derailleur spec',
+    rdOption: (label: string, maxCog: number, capacity: number) => `${label} (max ${maxCog}T / capacity ${capacity}T)`,
+    pass: 'OK',
+    over: 'Over',
+    capacityNeed: 'Capacity needed (ring diff + cog diff)',
+    maxCogLabel: 'Largest cog',
+    okMsg: '✓ This combination is compatible with the derailleur',
+    ngMsg: '✗ Exceeds the derailleur spec — shifting may misbehave or cause damage',
+    capacityNote: 'Actual limits per the manufacturer spec sheet; some derailleurs tolerate slight overage, but not under warranty.',
+    tabMatrix: 'Gear table',
+    tabSpeed: 'Speed chart',
+    tabCompare: 'A/B compare',
+    tabQuick: 'Quick calc',
+    tabCapacity: 'Capacity check',
+    wheelLabel: 'Wheel (circumference mm)',
+    wheelPresetAria: 'Wheel preset',
+    wheelAria: 'Wheel circumference',
+    wheelOption: (label: string, mm: number) => `${label} (${mm}mm)`,
+    circError: 'Enter 1000–2600 mm',
+    shareNote: 'Copy this page URL to share the whole setup with riding buddies.',
+  },
+} as const;
+
+type Dict = (typeof L)[Locale];
+
+// lib 內建預設的中文標籤 → 英文（齒數/型號本身語言中立，僅譯描述字）
+const PRESET_EN: Record<string, string> = {
+  '53/39 標準盤': '53/39 standard',
+  '52/36 半壓縮': '52/36 semi-compact',
+  '50/34 壓縮盤': '50/34 compact',
+  'Shimano 短腿（SS）': 'Shimano short cage (SS)',
+  'Shimano 中腿（GS）': 'Shimano medium cage (GS)',
+  'SRAM 短腿': 'SRAM short cage',
+  'SRAM 中腿（WiFLi）': 'SRAM medium cage (WiFLi)',
+};
+// 飛輪標籤如「11-25（11速）」→「11-25 (11-speed)」；無中文字的標籤原樣通過
+const enPresetLabel = (label: string) => PRESET_EN[label] ?? label.replace('（', ' (').replace('速）', '-speed)');
+const presetLabelFor = (locale: Locale) => (label: string) => (locale === 'en' ? enPresetLabel(label) : label);
+type PresetLabel = (label: string) => string;
 
 const inputClass =
   'w-full rounded-lg border border-edge bg-surface px-3 py-2 font-mono tabular-nums text-ink outline-none transition-colors focus:border-accent';
@@ -41,12 +162,16 @@ function TeethField({
   value,
   onChange,
   fallback,
+  t,
+  presetLabel,
 }: {
   label: string;
   presets: TeethPreset[];
   value: string;
   onChange: (v: string) => void;
   fallback: number[];
+  t: Dict;
+  presetLabel: PresetLabel;
 }) {
   const parsed = parseTeeth(value);
   const presetMatch = presets.find((p) => formatTeeth(p.teeth) === value);
@@ -57,21 +182,21 @@ function TeethField({
         value={presetMatch ? formatTeeth(presetMatch.teeth) : ''}
         onChange={(e) => e.target.value && onChange(e.target.value)}
         className={selectClass}
-        aria-label={`${label}預設`}
+        aria-label={t.presetAria(label)}
       >
-        <option value="">自訂…</option>
+        <option value="">{t.custom}</option>
         {presets.map((p) => (
-          <option key={p.label} value={formatTeeth(p.teeth)}>{p.label}</option>
+          <option key={p.label} value={formatTeeth(p.teeth)}>{presetLabel(p.label)}</option>
         ))}
       </select>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={formatTeeth(fallback)}
-        aria-label={`${label}齒數`}
+        aria-label={t.teethAria(label)}
         className={`${inputClass} mt-1 text-sm ${parsed ? '' : 'border-red-400'}`}
       />
-      {!parsed && <p className="mt-1 text-xs text-red-500">格式：齒數以 - 分隔，例如 {formatTeeth(fallback)}</p>}
+      {!parsed && <p className="mt-1 text-xs text-red-500">{t.teethFormat(formatTeeth(fallback))}</p>}
     </div>
   );
 }
@@ -87,7 +212,7 @@ function useDrivetrain(ringKey: string, cogKey: string, wheelStr: string): { dt:
   return { dt, ringStr, setRingStr, cogStr, setCogStr };
 }
 
-function MatrixPanel({ dt }: { dt: Drivetrain }) {
+function MatrixPanel({ dt, t }: { dt: Drivetrain; t: Dict }) {
   const [metric, setMetric] = useState<'ratio' | 'inches' | 'dev'>('ratio');
   const table = gearTable(dt);
   const rings = [...dt.chainrings].sort((a, b) => b - a);
@@ -101,7 +226,7 @@ function MatrixPanel({ dt }: { dt: Drivetrain }) {
   return (
     <div>
       <div className="mb-3 flex justify-center gap-1">
-        {([['ratio', '齒比'], ['inches', 'Gear inches'], ['dev', 'Development']] as const).map(([id, label]) => (
+        {([['ratio', t.metricRatio], ['inches', 'Gear inches'], ['dev', 'Development']] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setMetric(id)}
@@ -116,7 +241,7 @@ function MatrixPanel({ dt }: { dt: Drivetrain }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge">
-              <th className={`${thClass} text-left`}>飛輪＼大盤</th>
+              <th className={`${thClass} text-left`}>{t.headCogRing}</th>
               {rings.map((r) => <th key={r} className={thClass}>{r}T</th>)}
             </tr>
           </thead>
@@ -130,19 +255,19 @@ function MatrixPanel({ dt }: { dt: Drivetrain }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-muted">Development＝踩一圈曲柄前進的公尺數；gear inches 為傳統齒比單位。</p>
+      <p className="mt-2 text-xs text-muted">{t.matrixNote}</p>
     </div>
   );
 }
 
-function SpeedPanel({ dt }: { dt: Drivetrain }) {
+function SpeedPanel({ dt, t }: { dt: Drivetrain; t: Dict }) {
   const [rpm, setRpm] = useState<number>(90);
   const rings = [...dt.chainrings].sort((a, b) => b - a);
   const cogs = [...dt.cassette].sort((a, b) => a - b);
   return (
     <div>
       <div className="mb-3 flex items-center justify-center gap-1">
-        <span className="mr-2 text-sm text-muted">迴轉速</span>
+        <span className="mr-2 text-sm text-muted">{t.cadence}</span>
         {SPEED_RPMS.map((r) => (
           <button
             key={r}
@@ -159,7 +284,7 @@ function SpeedPanel({ dt }: { dt: Drivetrain }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge">
-              <th className={`${thClass} text-left`}>飛輪＼大盤</th>
+              <th className={`${thClass} text-left`}>{t.headCogRing}</th>
               {rings.map((r) => <th key={r} className={thClass}>{r}T</th>)}
             </tr>
           </thead>
@@ -175,7 +300,7 @@ function SpeedPanel({ dt }: { dt: Drivetrain }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-muted">單位 km/h，假設無滑動的理想傳動。</p>
+      <p className="mt-2 text-xs text-muted">{t.speedNote}</p>
     </div>
   );
 }
@@ -191,7 +316,7 @@ function CompareRow({ label, a, b, better }: { label: string; a: string; b: stri
   );
 }
 
-function ComparePanel({ dt, wheelStr }: { dt: Drivetrain; wheelStr: string }) {
+function ComparePanel({ dt, wheelStr, t, presetLabel }: { dt: Drivetrain; wheelStr: string; t: Dict; presetLabel: PresetLabel }) {
   const b = useDrivetrain('rb', 'cb', wheelStr);
   const sa = setupSummary(dt);
   const sb = setupSummary(b.dt);
@@ -200,38 +325,38 @@ function ComparePanel({ dt, wheelStr }: { dt: Drivetrain; wheelStr: string }) {
   return (
     <div className="space-y-4">
       <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
-        <p className="mb-3 text-sm text-muted">設定 B（設定 A 用上方共用設定）</p>
+        <p className="mb-3 text-sm text-muted">{t.setupB}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <TeethField label="大盤 B" presets={CHAINRING_PRESETS} value={b.ringStr} onChange={b.setRingStr} fallback={DEFAULT_RINGS} />
-          <TeethField label="飛輪 B" presets={CASSETTE_PRESETS} value={b.cogStr} onChange={b.setCogStr} fallback={DEFAULT_CASSETTE} />
+          <TeethField label={t.ringB} presets={CHAINRING_PRESETS} value={b.ringStr} onChange={b.setRingStr} fallback={DEFAULT_RINGS} t={t} presetLabel={presetLabel} />
+          <TeethField label={t.cogB} presets={CASSETTE_PRESETS} value={b.cogStr} onChange={b.setCogStr} fallback={DEFAULT_CASSETTE} t={t} presetLabel={presetLabel} />
         </div>
       </div>
       <div className="overflow-x-auto rounded-[var(--radius-card)] border border-edge bg-surface">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-edge">
-              <th className={`${thClass} text-left`}>指標</th>
-              <th className={thClass}>A（{formatTeeth(dt.chainrings)}）</th>
-              <th className={thClass}>B（{formatTeeth(b.dt.chainrings)}）</th>
+              <th className={`${thClass} text-left`}>{t.metric}</th>
+              <th className={thClass}>{t.colA(formatTeeth(dt.chainrings))}</th>
+              <th className={thClass}>{t.colB(formatTeeth(b.dt.chainrings))}</th>
             </tr>
           </thead>
           <tbody>
-            <CompareRow label="最重齒比" a={sa.maxRatio.toFixed(2)} b={sb.maxRatio.toFixed(2)} better={pick(sa.maxRatio, sb.maxRatio, 'high')} />
-            <CompareRow label="最輕齒比（越小越好爬）" a={sa.minRatio.toFixed(2)} b={sb.minRatio.toFixed(2)} better={pick(sa.minRatio, sb.minRatio, 'low')} />
-            <CompareRow label="齒比範圍" a={`${sa.rangePercent.toFixed(0)}%`} b={`${sb.rangePercent.toFixed(0)}%`} better={pick(sa.rangePercent, sb.rangePercent, 'high')} />
-            <CompareRow label="90rpm 極速" a={`${sa.topSpeedAt90.toFixed(1)} km/h`} b={`${sb.topSpeedAt90.toFixed(1)} km/h`} better={pick(sa.topSpeedAt90, sb.topSpeedAt90, 'high')} />
-            <CompareRow label="90rpm 最低速" a={`${sa.lowSpeedAt90.toFixed(1)} km/h`} b={`${sb.lowSpeedAt90.toFixed(1)} km/h`} better={pick(sa.lowSpeedAt90, sb.lowSpeedAt90, 'low')} />
-            <CompareRow label="平均級距" a={`${sa.avgStepPercent.toFixed(1)}%`} b={`${sb.avgStepPercent.toFixed(1)}%`} better={pick(sa.avgStepPercent, sb.avgStepPercent, 'low')} />
-            <CompareRow label="最大斷差" a={`${sa.maxStepPercent.toFixed(1)}%`} b={`${sb.maxStepPercent.toFixed(1)}%`} better={pick(sa.maxStepPercent, sb.maxStepPercent, 'low')} />
+            <CompareRow label={t.rowMaxRatio} a={sa.maxRatio.toFixed(2)} b={sb.maxRatio.toFixed(2)} better={pick(sa.maxRatio, sb.maxRatio, 'high')} />
+            <CompareRow label={t.rowMinRatio} a={sa.minRatio.toFixed(2)} b={sb.minRatio.toFixed(2)} better={pick(sa.minRatio, sb.minRatio, 'low')} />
+            <CompareRow label={t.rowRange} a={`${sa.rangePercent.toFixed(0)}%`} b={`${sb.rangePercent.toFixed(0)}%`} better={pick(sa.rangePercent, sb.rangePercent, 'high')} />
+            <CompareRow label={t.rowTopSpeed} a={`${sa.topSpeedAt90.toFixed(1)} km/h`} b={`${sb.topSpeedAt90.toFixed(1)} km/h`} better={pick(sa.topSpeedAt90, sb.topSpeedAt90, 'high')} />
+            <CompareRow label={t.rowLowSpeed} a={`${sa.lowSpeedAt90.toFixed(1)} km/h`} b={`${sb.lowSpeedAt90.toFixed(1)} km/h`} better={pick(sa.lowSpeedAt90, sb.lowSpeedAt90, 'low')} />
+            <CompareRow label={t.rowAvgStep} a={`${sa.avgStepPercent.toFixed(1)}%`} b={`${sb.avgStepPercent.toFixed(1)}%`} better={pick(sa.avgStepPercent, sb.avgStepPercent, 'low')} />
+            <CompareRow label={t.rowMaxStep} a={`${sa.maxStepPercent.toFixed(1)}%`} b={`${sb.maxStepPercent.toFixed(1)}%`} better={pick(sa.maxStepPercent, sb.maxStepPercent, 'low')} />
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted">橘色為該指標較優的一方；級距越小換檔越順。含大小盤全部組合（未去除重疊檔）。</p>
+      <p className="text-xs text-muted">{t.compareNote}</p>
     </div>
   );
 }
 
-function QuickPanel({ dt }: { dt: Drivetrain }) {
+function QuickPanel({ dt, t }: { dt: Drivetrain; t: Dict }) {
   const rings = [...dt.chainrings].sort((a, b) => b - a);
   const cogs = [...dt.cassette].sort((a, b) => a - b);
   const [ring, setRing] = useState(rings[0]);
@@ -247,25 +372,25 @@ function QuickPanel({ dt }: { dt: Drivetrain }) {
     <div className="mx-auto max-w-md space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="mb-1 block text-sm text-muted">大盤</span>
+          <span className="mb-1 block text-sm text-muted">{t.ring}</span>
           <select value={curRing} onChange={(e) => setRing(Number(e.target.value))} className={selectClass}>
             {rings.map((r) => <option key={r} value={r}>{r}T</option>)}
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm text-muted">飛輪</span>
+          <span className="mb-1 block text-sm text-muted">{t.cog}</span>
           <select value={curCog} onChange={(e) => setCog(Number(e.target.value))} className={selectClass}>
             {cogs.map((c) => <option key={c} value={c}>{c}T</option>)}
           </select>
         </label>
       </div>
       <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4 text-center">
-        <span className="text-sm text-muted">齒比 </span>
+        <span className="text-sm text-muted">{t.ratioLabel}</span>
         <span className="font-mono text-lg tabular-nums text-ink">{ratio.toFixed(2)}</span>
       </div>
       <div className="space-y-2 rounded-[var(--radius-card)] border border-edge bg-surface p-4">
         <label className="block">
-          <span className="mb-1 block text-sm text-muted">迴轉速 → 時速</span>
+          <span className="mb-1 block text-sm text-muted">{t.rpmToSpeed}</span>
           <input type="number" value={rpmStr} onChange={(e) => setRpmStr(e.target.value)} className={inputClass} placeholder="90" />
         </label>
         <p className="text-center font-mono text-2xl tabular-nums text-ink">
@@ -274,7 +399,7 @@ function QuickPanel({ dt }: { dt: Drivetrain }) {
       </div>
       <div className="space-y-2 rounded-[var(--radius-card)] border border-edge bg-surface p-4">
         <label className="block">
-          <span className="mb-1 block text-sm text-muted">時速 → 所需迴轉速</span>
+          <span className="mb-1 block text-sm text-muted">{t.speedToRpm}</span>
           <input type="number" value={speedStr} onChange={(e) => setSpeedStr(e.target.value)} className={inputClass} placeholder="35" />
         </label>
         <p className="text-center font-mono text-2xl tabular-nums text-ink">
@@ -285,50 +410,51 @@ function QuickPanel({ dt }: { dt: Drivetrain }) {
   );
 }
 
-function CapacityPanel({ dt }: { dt: Drivetrain }) {
+function CapacityPanel({ dt, t, presetLabel }: { dt: Drivetrain; t: Dict; presetLabel: PresetLabel }) {
   const [rdIdx, setRdIdx] = useState(1);
   const rd = DERAILLEUR_PRESETS[rdIdx];
   const r = checkDerailleur(dt.chainrings, dt.cassette, rd);
   const Badge = ({ ok }: { ok: boolean }) => (
-    <span className={`rounded px-2 py-0.5 text-sm text-white ${ok ? 'bg-green-600' : 'bg-red-500'}`}>{ok ? '通過' : '超出'}</span>
+    <span className={`rounded px-2 py-0.5 text-sm text-white ${ok ? 'bg-green-600' : 'bg-red-500'}`}>{ok ? t.pass : t.over}</span>
   );
   return (
     <div className="mx-auto max-w-md space-y-4">
       <label className="block">
-        <span className="mb-1 block text-sm text-muted">後變速器規格</span>
+        <span className="mb-1 block text-sm text-muted">{t.rdSpec}</span>
         <select value={rdIdx} onChange={(e) => setRdIdx(Number(e.target.value))} className={selectClass}>
           {DERAILLEUR_PRESETS.map((p, i) => (
-            <option key={p.label} value={i}>{p.label}（最大 {p.maxCog}T／容量 {p.capacity}T）</option>
+            <option key={p.label} value={i}>{t.rdOption(presetLabel(p.label), p.maxCog, p.capacity)}</option>
           ))}
         </select>
       </label>
       <div className="space-y-2">
         <div className="flex items-center justify-between rounded-lg border border-edge bg-surface px-4 py-3">
-          <span className="text-sm text-muted">總容量需求（大盤差＋飛輪差）</span>
+          <span className="text-sm text-muted">{t.capacityNeed}</span>
           <span className="flex items-center gap-2 font-mono tabular-nums text-ink">{r.capacity}T <Badge ok={r.capacityOk} /></span>
         </div>
         <div className="flex items-center justify-between rounded-lg border border-edge bg-surface px-4 py-3">
-          <span className="text-sm text-muted">最大飛輪齒</span>
+          <span className="text-sm text-muted">{t.maxCogLabel}</span>
           <span className="flex items-center gap-2 font-mono tabular-nums text-ink">{r.maxCog}T <Badge ok={r.maxCogOk} /></span>
         </div>
       </div>
       <p className={`text-center text-lg ${r.ok ? 'text-green-600' : 'text-red-500'}`}>
-        {r.ok ? '✓ 此組合與該變速器相容' : '✗ 超出變速器規格，換檔可能異常或損壞'}
+        {r.ok ? t.okMsg : t.ngMsg}
       </p>
-      <p className="text-center text-xs text-muted">實際上限以原廠規格表為準；部分變速器可小幅超出但不受保固。</p>
+      <p className="text-center text-xs text-muted">{t.capacityNote}</p>
     </div>
   );
 }
 
-const TABS = [
-  { id: 'matrix', label: '齒比表' },
-  { id: 'speed', label: '速度對照' },
-  { id: 'compare', label: 'A/B 比較' },
-  { id: 'quick', label: '快算' },
-  { id: 'capacity', label: '容量檢查' },
-];
-
-export default function GearCalculator() {
+export default function GearCalculator({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
+  const presetLabel = presetLabelFor(locale);
+  const tabs = [
+    { id: 'matrix', label: t.tabMatrix },
+    { id: 'speed', label: t.tabSpeed },
+    { id: 'compare', label: t.tabCompare },
+    { id: 'quick', label: t.tabQuick },
+    { id: 'capacity', label: t.tabCapacity },
+  ];
   const [wheelStr, setWheelStr] = useUrlState('w', String(DEFAULT_WHEEL));
   const a = useDrivetrain('r', 'c', wheelStr);
   const [tab, setTab] = useState('matrix');
@@ -339,41 +465,41 @@ export default function GearCalculator() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6 rounded-[var(--radius-card)] border border-edge bg-surface p-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <TeethField label="大盤" presets={CHAINRING_PRESETS} value={a.ringStr} onChange={a.setRingStr} fallback={DEFAULT_RINGS} />
-          <TeethField label="飛輪" presets={CASSETTE_PRESETS} value={a.cogStr} onChange={a.setCogStr} fallback={DEFAULT_CASSETTE} />
+          <TeethField label={t.ring} presets={CHAINRING_PRESETS} value={a.ringStr} onChange={a.setRingStr} fallback={DEFAULT_RINGS} t={t} presetLabel={presetLabel} />
+          <TeethField label={t.cog} presets={CASSETTE_PRESETS} value={a.cogStr} onChange={a.setCogStr} fallback={DEFAULT_CASSETTE} t={t} presetLabel={presetLabel} />
           <div>
-            <span className="mb-1 block text-sm text-muted">輪組（周長 mm）</span>
+            <span className="mb-1 block text-sm text-muted">{t.wheelLabel}</span>
             <select
               value={wheelMatch ? String(wheelMatch.circumferenceMm) : ''}
               onChange={(e) => e.target.value && setWheelStr(e.target.value)}
               className={selectClass}
-              aria-label="輪組預設"
+              aria-label={t.wheelPresetAria}
             >
-              <option value="">自訂…</option>
+              <option value="">{t.custom}</option>
               {WHEEL_PRESETS.map((w) => (
-                <option key={w.label} value={String(w.circumferenceMm)}>{w.label}（{w.circumferenceMm}mm）</option>
+                <option key={w.label} value={String(w.circumferenceMm)}>{t.wheelOption(w.label, w.circumferenceMm)}</option>
               ))}
             </select>
             <input
               value={wheelStr}
               onChange={(e) => setWheelStr(e.target.value)}
-              aria-label="輪組周長"
+              aria-label={t.wheelAria}
               className={`${inputClass} mt-1 text-sm ${circValid ? '' : 'border-red-400'}`}
             />
-            {!circValid && <p className="mt-1 text-xs text-red-500">請輸入 1000–2600 mm</p>}
+            {!circValid && <p className="mt-1 text-xs text-red-500">{t.circError}</p>}
           </div>
         </div>
-        <p className="mt-3 text-xs text-muted">複製本頁網址即可把整組設定分享給車友。</p>
+        <p className="mt-3 text-xs text-muted">{t.shareNote}</p>
       </div>
 
       <div className="flex justify-center">
-        <Tabs tabs={TABS} active={tab} onChange={setTab} />
+        <Tabs tabs={tabs} active={tab} onChange={setTab} />
       </div>
-      {tab === 'matrix' && <MatrixPanel dt={a.dt} />}
-      {tab === 'speed' && <SpeedPanel dt={a.dt} />}
-      {tab === 'compare' && <ComparePanel dt={a.dt} wheelStr={wheelStr} />}
-      {tab === 'quick' && <QuickPanel dt={a.dt} />}
-      {tab === 'capacity' && <CapacityPanel dt={a.dt} />}
+      {tab === 'matrix' && <MatrixPanel dt={a.dt} t={t} />}
+      {tab === 'speed' && <SpeedPanel dt={a.dt} t={t} />}
+      {tab === 'compare' && <ComparePanel dt={a.dt} wheelStr={wheelStr} t={t} presetLabel={presetLabel} />}
+      {tab === 'quick' && <QuickPanel dt={a.dt} t={t} />}
+      {tab === 'capacity' && <CapacityPanel dt={a.dt} t={t} presetLabel={presetLabel} />}
     </div>
   );
 }
