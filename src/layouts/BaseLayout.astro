@@ -77,5 +77,10 @@ const jsonLd = {
     <Footer />
     <CommandPalette client:idle />
     {toolId && <TrackVisit id={toolId} client:idle />}
+    <script>
+      // Vercel Web Analytics：無 cookie、匿名頁面瀏覽統計（僅正式環境生效）
+      import { inject } from '@vercel/analytics';
+      inject();
+    </script>
   </body>
 </html>
