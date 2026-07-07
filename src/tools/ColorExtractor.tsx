@@ -7,11 +7,32 @@ import {
   type RGB,
 } from '../lib/color';
 import CopyButton from '../components/CopyButton';
+import type { Locale } from '../lib/i18n';
+
+const L = {
+  zh: {
+    notImage: '請選擇圖片檔。',
+    loadError: '無法讀取這張圖片。',
+    dropHere: '點擊或拖曳圖片到這裡',
+    localOnly: '圖片只在你的瀏覽器處理，不會上傳',
+    countLabel: '取色數量',
+    previewAlt: '預覽',
+  },
+  en: {
+    notImage: 'Please choose an image file.',
+    loadError: 'Could not read this image.',
+    dropHere: 'Click or drop an image here',
+    localOnly: 'Images are processed in your browser only — never uploaded',
+    countLabel: 'Colors to extract',
+    previewAlt: 'Preview',
+  },
+} as const;
 
 const COUNTS = [4, 6, 8, 12];
 const SAMPLE_EDGE = 120; // downscale longest edge to this many px before sampling
 
-export default function ColorExtractor() {
+export default function ColorExtractor({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [preview, setPreview] = useState<string | null>(null);
   const [palette, setPalette] = useState<RGB[]>([]);
   const [count, setCount] = useState(6);
@@ -46,7 +67,7 @@ export default function ColorExtractor() {
 
   function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
-      setError('請選擇圖片檔。');
+      setError(t.notImage);
       return;
     }
     setError(null);
@@ -63,7 +84,7 @@ export default function ColorExtractor() {
       setPalette(extractPalette(pixels, count));
     };
     img.onerror = () => {
-      setError('無法讀取這張圖片。');
+      setError(t.loadError);
       URL.revokeObjectURL(url);
     };
     img.src = url;
@@ -97,13 +118,13 @@ export default function ColorExtractor() {
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
         />
         <span className="text-3xl">🖼️</span>
-        <span className="mt-2 text-sm text-ink">點擊或拖曳圖片到這裡</span>
-        <span className="mt-1 text-xs text-muted">圖片只在你的瀏覽器處理，不會上傳</span>
+        <span className="mt-2 text-sm text-ink">{t.dropHere}</span>
+        <span className="mt-1 text-xs text-muted">{t.localOnly}</span>
       </label>
       {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
 
       <div className="mt-5 flex items-center gap-2">
-        <span className="text-sm text-muted">取色數量</span>
+        <span className="text-sm text-muted">{t.countLabel}</span>
         {COUNTS.map((n) => (
           <button
             key={n}
@@ -117,7 +138,7 @@ export default function ColorExtractor() {
 
       {preview && (
         <div className="mt-6 grid gap-6 sm:grid-cols-[180px_1fr]">
-          <img src={preview} alt="預覽" className="h-44 w-full rounded-[var(--radius-card)] border border-edge object-cover" />
+          <img src={preview} alt={t.previewAlt} className="h-44 w-full rounded-[var(--radius-card)] border border-edge object-cover" />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {palette.map((c, i) => {
               const hex = rgbToHex(c);

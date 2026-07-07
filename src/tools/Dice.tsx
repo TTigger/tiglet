@@ -1,5 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import { rollDice, sum, pipsFor } from '../lib/dice';
+import type { Locale } from '../lib/i18n';
+
+const L = {
+  zh: {
+    count: '數量',
+    sides: '面數',
+    total: '總和：',
+    preview: (count: number, sides: number) => `預覽：${count} 顆 d${sides} · 按下擲骰子開始`,
+    rolling: '擲骰中…',
+    roll: '擲骰子',
+    history: '最近紀錄',
+  },
+  en: {
+    count: 'Dice',
+    sides: 'Sides',
+    total: 'Total: ',
+    preview: (count: number, sides: number) => `Preview: ${count} × d${sides} · press Roll to start`,
+    rolling: 'Rolling…',
+    roll: 'Roll',
+    history: 'Recent rolls',
+  },
+} as const;
 
 const SIDES = [4, 6, 8, 10, 12, 20];
 const ROLL_MS = 950;
@@ -57,7 +79,8 @@ function Die3D({ value, sides, rolling, delay, highlight }: {
   );
 }
 
-export default function Dice() {
+export default function Dice({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [count, setCount] = useState(2);
   const [sides, setSides] = useState(6);
   const [results, setResults] = useState<number[]>([]);
@@ -97,10 +120,10 @@ export default function Dice() {
   return (
     <div className="mx-auto max-w-md">
       <div className="mb-6 flex flex-wrap items-center gap-4">
-        <label className="text-sm text-ink">數量
+        <label className="text-sm text-ink">{t.count}
           <input type="number" min={1} max={20} value={count} disabled={rolling} onChange={(e) => changeCount(Number(e.target.value))} className="mx-2 w-16 rounded border border-edge bg-surface px-2 py-1 text-center disabled:opacity-50" />
         </label>
-        <label className="text-sm text-ink">面數
+        <label className="text-sm text-ink">{t.sides}
           <select value={sides} disabled={rolling} onChange={(e) => changeSides(Number(e.target.value))} className="mx-2 rounded border border-edge bg-surface px-2 py-1 disabled:opacity-50">
             {SIDES.map((s) => <option key={s} value={s}>d{s}</option>)}
           </select>
@@ -114,19 +137,19 @@ export default function Dice() {
           ))}
         </div>
         {rolled ? (
-          results.length > 1 && <p className="mt-6 text-muted">總和：<span className="font-semibold text-ink">{sum(results)}</span></p>
+          results.length > 1 && <p className="mt-6 text-muted">{t.total}<span className="font-semibold text-ink">{sum(results)}</span></p>
         ) : (
-          <p className="mt-6 text-sm text-muted">預覽：{count} 顆 d{sides} · 按下擲骰子開始</p>
+          <p className="mt-6 text-sm text-muted">{t.preview(count, sides)}</p>
         )}
       </div>
 
       <button onClick={roll} disabled={rolling} className="mt-6 w-full rounded-lg bg-accent py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50">
-        {rolling ? '擲骰中…' : '擲骰子'}
+        {rolling ? t.rolling : t.roll}
       </button>
 
       {history.length > 0 && (
         <div className="mt-6">
-          <h2 className="mb-2 text-xs uppercase tracking-wide text-muted">最近紀錄</h2>
+          <h2 className="mb-2 text-xs uppercase tracking-wide text-muted">{t.history}</h2>
           <ul className="space-y-1 text-sm">
             {history.map((h, i) => (
               <li key={i} className="flex items-center justify-between rounded border border-edge bg-surface px-3 py-1.5 text-muted">
