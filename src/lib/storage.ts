@@ -2,6 +2,9 @@ const FAV_KEY = 'tiglet:favorites';
 const RECENT_KEY = 'tiglet:recent';
 const RECENT_MAX = 6;
 
+// 釘選變更的全域廣播事件：首頁靜態卡片腳本與 React islands 靠它同步
+export const FAV_CHANGE_EVENT = 'tiglet:fav-change';
+
 function read(key: string): string[] {
   if (typeof window === 'undefined') return [];
   try {

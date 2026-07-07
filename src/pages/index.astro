@@ -1,6 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SearchBar from '../components/SearchBar.tsx';
+import ToolCard from '../components/ToolCard.astro';
+import { tools, CATEGORY_ORDER } from '../data/tools';
+
+// 工具卡片在伺服器端輸出：HTML 直接帶著全部工具連結（SEO 與無 JS 可用性），
+// SearchBar island 只負責搜尋過濾與最愛/最近等個人化區塊。
+const available = tools.filter((t) => t.status === 'available');
 ---
 <BaseLayout>
   <section class="mb-10">
@@ -8,4 +14,42 @@ import SearchBar from '../components/SearchBar.tsx';
     <p class="mt-2 text-muted">一組乾淨、免登入的瀏覽器小工具。</p>
   </section>
   <SearchBar client:idle />
+  <div id="all-tools">
+    {CATEGORY_ORDER.map((cat) => {
+      const inCat = available.filter((t) => t.category === cat);
+      if (inCat.length === 0) return null;
+      return (
+        <section class="mb-10">
+          <h2 class="mb-4 font-serif text-xl text-ink">{cat}</h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {inCat.map((t) => <ToolCard tool={t} />)}
+          </div>
+        </section>
+      );
+    })}
+  </div>
+  <script>
+    // 靜態卡片星星：單一委派監聽器驅動全部 29 顆星，與 SearchBar island 靠事件同步
+    import { isFavorite, toggleFavorite, FAV_CHANGE_EVENT } from '../lib/storage';
+
+    function paint() {
+      document.querySelectorAll<HTMLButtonElement>('#all-tools .js-fav').forEach((b) => {
+        const on = isFavorite(b.dataset.id ?? '');
+        b.textContent = on ? '⭐' : '☆';
+        b.setAttribute('aria-pressed', String(on));
+      });
+    }
+
+    document.getElementById('all-tools')?.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLButtonElement>('.js-fav');
+      if (!btn) return;
+      e.preventDefault();
+      toggleFavorite(btn.dataset.id ?? '');
+      paint();
+      window.dispatchEvent(new Event(FAV_CHANGE_EVENT));
+    });
+
+    window.addEventListener(FAV_CHANGE_EVENT, paint);
+    paint();
+  </script>
 </BaseLayout>
