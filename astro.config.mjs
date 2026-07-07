@@ -8,7 +8,13 @@ export default defineConfig({
   site: 'https://tiglet.vercel.app',
   integrations: [
     react(),
-    sitemap(),
+    sitemap({
+      // 雙語 hreflang：sitemap 內為 / 與 /en/ 互相標注 alternate
+      i18n: {
+        defaultLocale: 'zh',
+        locales: { zh: 'zh-Hant', en: 'en' },
+      },
+    }),
     AstroPWA({
       registerType: 'autoUpdate',
       manifest: {

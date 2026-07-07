@@ -13,6 +13,7 @@
 
 ## 特色
 
+- **雙語介面**——完整的繁體中文與英文版（`/` 與 `/en/`），一鍵切換、hreflang 互相標注
 - **⌘K 命令面板**——在任何頁面快速跳到任何工具
 - **淺色／深色模式**——溫暖低對比的主題，一鍵切換（載入不閃爍）
 - **最愛與最近使用**——釘選常用工具，顯示在首頁
@@ -111,11 +112,14 @@ src/
 
 ## 新增工具
 
-1. 在 `src/data/tools.ts` 加一筆（`status: 'available'`）。
+1. 在 `src/data/tools.ts` 加一筆（`status: 'available'`，中英文的
+   `titleEn`／`descriptionEn` 都要填）。
 2. 核心邏輯放 `src/lib/<tool>.ts`，測試放 `src/lib/__tests__/`。
-3. UI 島嶼寫在 `src/tools/<Tool>.tsx`。
-4. 建立頁面 `src/pages/tools/<tool>.astro`，把 `toolId` 傳給 `BaseLayout`
-   以記錄「最近使用」。
+3. UI 島嶼寫在 `src/tools/<Tool>.tsx`——接受選填的 `locale` prop，
+   使用者可見字串放進同檔的 `L = { zh, en }` 字典。
+4. 建立中文頁 `src/pages/tools/<tool>.astro` 與英文頁
+   `src/pages/en/tools/<tool>.astro`（島嶼傳 `locale="en"`），
+   並把 `toolId` 傳給 `BaseLayout` 以記錄「最近使用」。
 
 ## 部署
 

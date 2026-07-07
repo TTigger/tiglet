@@ -13,6 +13,7 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 
 ## Features
 
+- **Bilingual** — full Traditional Chinese and English UIs (`/` and `/en/`), with a one-click language toggle and hreflang-linked pages
 - **⌘K command palette** — jump to any tool from anywhere
 - **Light / dark mode** — warm, low-contrast theme with a one-click toggle (no flash on load)
 - **Favorites & recently used** — pin the tools you use, surfaced on the home page
@@ -113,11 +114,14 @@ Image Studio (compress / resize / convert) — sharing a single `Tabs` component
 
 ## Adding a new tool
 
-1. Add an entry to `src/data/tools.ts` (with `status: 'available'`).
+1. Add an entry to `src/data/tools.ts` (with `status: 'available'`, both zh and
+   `titleEn`/`descriptionEn` fields).
 2. Put the core logic in `src/lib/<tool>.ts` and a spec in `src/lib/__tests__/`.
-3. Build the UI island in `src/tools/<Tool>.tsx`.
-4. Create the page `src/pages/tools/<tool>.astro`, passing `toolId` to `BaseLayout`
-   so visits are tracked in "recently used".
+3. Build the UI island in `src/tools/<Tool>.tsx` — accept an optional
+   `locale` prop and keep user-facing strings in a colocated `L = { zh, en }` dict.
+4. Create the zh page `src/pages/tools/<tool>.astro` and the EN page
+   `src/pages/en/tools/<tool>.astro` (pass `locale="en"` to the island), passing
+   `toolId` to `BaseLayout` so visits are tracked in "recently used".
 
 ## Deployment
 
