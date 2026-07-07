@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HashId from '../../tools/HashId.tsx';
+---
+<BaseLayout title="雜湊 / UUID — Tiglet" description="文字與檔案的 SHA-256、SHA-1 雜湊計算，加上 UUID v4 批次產生——全部用 Web Crypto 在瀏覽器本機執行。" toolId="hash-id">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">雜湊 / UUID</h1>
+  <HashId client:visible />
+</BaseLayout>
