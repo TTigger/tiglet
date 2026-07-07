@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import Tabs from '../components/Tabs';
+import CopyButton from '../components/CopyButton';
 import { bmi, bmiCategory, healthyWeightRange, type BmiCategory } from '../lib/health';
 import { percentOf, ofValue, percentChange, discountedPrice, splitTip } from '../lib/percent';
+import { toChineseAmount } from '../lib/chineseAmount';
 import type { Locale } from '../lib/i18n';
 
 const L = {
@@ -40,6 +42,12 @@ const L = {
     tipAmount: '小費金額',
     total: '總計',
     perPerson: '每人應付',
+    tabUppercase: '大寫金額',
+    amount: '金額',
+    amountPlaceholder: '例如 12345.67',
+    uppercaseResult: '大寫',
+    uppercaseInvalid: '請輸入 0 到 9,999 兆之間的金額。',
+    uppercaseNote: '支票、合約常用的中文大寫金額；四捨五入到分。數字只在你的瀏覽器轉換。',
   },
   en: {
     tabBmi: 'BMI',
@@ -76,6 +84,12 @@ const L = {
     tipAmount: 'Tip amount',
     total: 'Total',
     perPerson: 'Per person',
+    tabUppercase: 'Chinese uppercase',
+    amount: 'Amount',
+    amountPlaceholder: 'e.g. 12345.67',
+    uppercaseResult: 'Uppercase',
+    uppercaseInvalid: 'Enter an amount between 0 and 9,999 trillion.',
+    uppercaseNote: 'Formal Chinese uppercase amounts used on checks and contracts; rounded to cents. Converted entirely in your browser.',
   },
 } as const;
 type Dict = (typeof L)[Locale];
@@ -213,6 +227,32 @@ function TipPanel({ t }: { t: Dict }) {
   );
 }
 
+function UppercasePanel({ t }: { t: Dict }) {
+  const [amountStr, setAmountStr] = useState('12345');
+  const n = num(amountStr);
+  const result = amountStr.trim() === '' ? null : toChineseAmount(n);
+
+  return (
+    <div className="mx-auto max-w-md space-y-4">
+      <Field label={t.amount} value={amountStr} onChange={setAmountStr} suffix="NT$" />
+      <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-6">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-sm text-muted">{t.uppercaseResult}</span>
+          {result && <CopyButton value={result} />}
+        </div>
+        {amountStr.trim() === '' ? (
+          <p className="font-serif text-2xl text-muted">—</p>
+        ) : result === null ? (
+          <p className="text-sm text-red-500">{t.uppercaseInvalid}</p>
+        ) : (
+          <p className="break-all font-serif text-2xl leading-relaxed text-ink">{result}</p>
+        )}
+      </div>
+      <p className="text-xs text-muted">{t.uppercaseNote}</p>
+    </div>
+  );
+}
+
 export default function EverydayCalc({ locale = 'zh' }: { locale?: Locale }) {
   const t = L[locale];
   const [tab, setTab] = useState('bmi');
@@ -221,6 +261,7 @@ export default function EverydayCalc({ locale = 'zh' }: { locale?: Locale }) {
     { id: 'percent', label: t.tabPercent },
     { id: 'discount', label: t.tabDiscount },
     { id: 'tip', label: t.tabTip },
+    { id: 'uppercase', label: t.tabUppercase },
   ];
   return (
     <div className="mx-auto max-w-2xl">
@@ -231,6 +272,7 @@ export default function EverydayCalc({ locale = 'zh' }: { locale?: Locale }) {
       {tab === 'percent' && <PercentPanel t={t} />}
       {tab === 'discount' && <DiscountPanel t={t} />}
       {tab === 'tip' && <TipPanel t={t} />}
+      {tab === 'uppercase' && <UppercasePanel t={t} />}
     </div>
   );
 }
