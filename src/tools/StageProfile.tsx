@@ -3,6 +3,8 @@ import type { ChangeEvent } from 'react';
 import {
   parseGpx,
   parseGpxName,
+  parseGpxWaypoints,
+  locateOnTrack,
   buildProfile,
   totalAscentM,
   detectClimbs,
@@ -380,10 +382,15 @@ export default function StageProfile() {
       const points = parseGpx(xml);
       const p = buildProfile(points);
       const cs = detectClimbs(p.samples);
+      // GPX 自帶的 <wpt> 航點（補給站/地標）自動帶入地標編輯器，仍可改可刪
+      const autoWaypoints: Waypoint[] = parseGpxWaypoints(xml)
+        .map((w) => ({ w, loc: locateOnTrack(points, w.lat, w.lon) }))
+        .filter((x): x is { w: ReturnType<typeof parseGpxWaypoints>[number]; loc: NonNullable<ReturnType<typeof locateOnTrack>> } => x.loc !== null)
+        .map(({ w, loc }) => ({ km: (loc.distanceM / 1000).toFixed(1), name: w.name }));
       setProfile(p);
       setClimbs(cs);
       setClimbNames(Array(cs.length).fill(''));
-      setWaypoints([]);
+      setWaypoints(autoWaypoints);
       setDetailIdx(null);
       setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
@@ -531,7 +538,10 @@ export default function StageProfile() {
               </button>
             </div>
             {waypoints.length === 0 ? (
-              <p className="text-xs text-muted">例如：西寶 26km、大禹嶺 87km——標出補給站或途經城鎮，做出台灣 KOM 式的賽段圖。</p>
+              <p className="text-xs text-muted">
+                例如：西寶 26km、大禹嶺 87km——標出補給站或途經城鎮，做出台灣 KOM 式的賽段圖。
+                若 GPX 檔內含航點（Komoot／RWGPS 匯出常見），上傳時會自動帶入。
+              </p>
             ) : (
               <div className="space-y-2">
                 {waypoints.map((w, i) => (

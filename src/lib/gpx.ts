@@ -56,6 +56,40 @@ export function parseGpxName(xml: string): string | null {
   return name || null;
 }
 
+export interface GpxWaypoint {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
+// GPX 規格的 <wpt> 航點（Komoot/RWGPS 等匯出常自帶補給站與地標）；沒名字的略過
+export function parseGpxWaypoints(xml: string): GpxWaypoint[] {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) return [];
+  const out: GpxWaypoint[] = [];
+  for (const n of Array.from(doc.querySelectorAll('wpt'))) {
+    const lat = Number(n.getAttribute('lat'));
+    const lon = Number(n.getAttribute('lon'));
+    const name = n.querySelector('name')?.textContent?.trim();
+    if (name && Number.isFinite(lat) && Number.isFinite(lon)) out.push({ name, lat, lon });
+  }
+  return out;
+}
+
+const OFF_ROUTE_MAX_M = 500;
+
+// 把一個座標定位到軌跡上：回傳最近軌跡點的累積距離；離線超過 500m 視為不在路線上
+export function locateOnTrack(points: TrackPoint[], lat: number, lon: number): { distanceM: number; offTrackM: number } | null {
+  let cum = 0;
+  let best = { distanceM: 0, offTrackM: Infinity };
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0) cum += haversineM(points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon);
+    const d = haversineM(points[i].lat, points[i].lon, lat, lon);
+    if (d < best.offTrackM) best = { distanceM: cum, offTrackM: d };
+  }
+  return best.offTrackM <= OFF_ROUTE_MAX_M ? best : null;
+}
+
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
