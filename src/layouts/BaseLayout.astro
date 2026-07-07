@@ -4,13 +4,22 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import CommandPalette from '../components/CommandPalette.tsx';
 import TrackVisit from '../components/TrackVisit.tsx';
+import { localeFromPath, switchLocalePath } from '../lib/i18n';
 
 interface Props { title?: string; description?: string; toolId?: string; }
-const { title = 'Tiglet — 小工具站', description = 'TTigger 的小工具集與作品集。', toolId } = Astro.props;
+const locale = localeFromPath(Astro.url.pathname);
+const {
+  title = locale === 'en' ? 'Tiglet — small browser tools' : 'Tiglet — 小工具站',
+  description = locale === 'en' ? 'A clean, no-login collection of small browser tools.' : 'TTigger 的小工具集與作品集。',
+  toolId,
+} = Astro.props;
 
 const site = Astro.site ?? new URL('https://tiglet.vercel.app');
 const canonical = new URL(Astro.url.pathname, site);
 const ogImage = new URL('/pwa-512x512.png', site);
+// hreflang 對照連結（zh 為 x-default）
+const zhUrl = new URL(switchLocalePath(Astro.url.pathname, 'zh'), site);
+const enUrl = new URL(switchLocalePath(Astro.url.pathname, 'en'), site);
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -26,7 +35,7 @@ const jsonLd = {
 };
 ---
 <!doctype html>
-<html lang="zh-Hant">
+<html lang={locale === 'en' ? 'en' : 'zh-Hant'}>
   <head>
     <script is:inline>
       (() => {
@@ -42,6 +51,9 @@ const jsonLd = {
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
+    <link rel="alternate" hreflang="zh-Hant" href={zhUrl.href} />
+    <link rel="alternate" hreflang="en" href={enUrl.href} />
+    <link rel="alternate" hreflang="x-default" href={zhUrl.href} />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -50,7 +62,7 @@ const jsonLd = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical.href} />
     <meta property="og:image" content={ogImage.href} />
-    <meta property="og:locale" content="zh_Hant" />
+    <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'zh_Hant'} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary" />

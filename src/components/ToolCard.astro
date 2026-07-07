@@ -1,15 +1,17 @@
 ---
 import type { Tool } from '../data/tools';
+import { toolTitle, toolDescription, toolPath, type Locale } from '../lib/i18n';
 
 // 純伺服器端卡片：星星是普通按鈕，由 index.astro 的委派腳本驅動
 // （不用 29 個 React islands，首頁保持輕量）
 interface Props {
   tool: Tool;
+  locale?: Locale;
 }
-const { tool } = Astro.props;
+const { tool, locale = 'zh' } = Astro.props;
 ---
 <a
-  href={tool.path}
+  href={toolPath(tool, locale)}
   class="group relative block rounded-[var(--radius-card)] border border-edge bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]"
 >
   <div class="mb-3 flex items-center justify-between">
@@ -18,10 +20,10 @@ const { tool } = Astro.props;
       type="button"
       class="js-fav text-base leading-none transition-transform hover:scale-110"
       data-id={tool.id}
-      aria-label="釘選工具"
+      aria-label={locale === 'en' ? 'Pin tool' : '釘選工具'}
       aria-pressed="false"
     >☆</button>
   </div>
-  <h3 class="font-serif text-lg text-ink">{tool.title}</h3>
-  <p class="mt-1 text-sm text-muted">{tool.description}</p>
+  <h3 class="font-serif text-lg text-ink">{toolTitle(tool, locale)}</h3>
+  <p class="mt-1 text-sm text-muted">{toolDescription(tool, locale)}</p>
 </a>
