@@ -22,7 +22,7 @@ export default function FavoriteButton({ id, onChange }: { id: string; onChange?
   }
 
   return (
-    <button onClick={onClick} aria-label="釘選工具" className="text-base leading-none transition-transform hover:scale-110">
+    <button onClick={onClick} aria-label="釘選工具" aria-pressed={fav} className="text-base leading-none transition-transform hover:scale-110">
       {fav ? '⭐' : '☆'}
     </button>
   );

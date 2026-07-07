@@ -41,6 +41,7 @@ export default function QrCode() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="輸入文字或網址…"
+        aria-label="QR 內容"
         className="mb-6 w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
       />
       <div className="flex flex-col items-center">
