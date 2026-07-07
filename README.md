@@ -58,6 +58,7 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 | Text | **Text Diff** | Line-level LCS diff with inline character highlighting — zero dependencies |
 | Text | **JSON Tool** | Format, minify, validate (errors located to line/column by a hand-rolled scanner), and a collapsible tree view with click-to-copy JSON paths |
 | Text | **Markdown Studio** | Paste or upload Markdown for a live preview (DOMPurify-sanitized), a clickable heading-outline tree, and document stats |
+| Text | **Hash / UUID** | SHA-256 / SHA-1 for text and files (Web Crypto, no MD5 by design) plus batch UUID v4 generation |
 
 ## Tech stack
 
