@@ -35,14 +35,46 @@ const L = {
     loadSample: '沒有檔案？先載入範例路線試玩',
     sampleTitle: '範例路線：河濱＋二級坡 22K',
     sampleWaypoint: '山腳補給站',
-    exportSummary: '怎麼從 Strava / Garmin / Bryton 匯出 GPX？',
-    guideSep: '：',
+    exportSummary: '第一次用？如何取得你的騎乘檔案（GPX / FIT / TCX）',
+    guideIntroTitle: '這些檔案是什麼？',
+    guideIntro:
+      '你每次騎車，碼錶或手機 app 都在記錄一個「軌跡檔」——GPX 與 TCX 是文字格式、FIT 是碼錶原生格式。這個工具三種都能吃，所以拿到哪種就丟哪種，不用轉檔。以下是各平台把檔案「拿出來」的方法：',
+    guideMobile: '📱 手機 app',
+    guideWeb: '💻 電腦／網頁',
     guides: [
-      { app: 'Strava', steps: '活動頁 → 右上「⋯」→「匯出 GPX」。路線（Routes）頁也有相同選項。' },
-      { app: 'Garmin Connect', steps: '活動頁 → 右上齒輪 →「匯出至 GPX」。' },
-      { app: 'Bryton Active', steps: '活動 → 分享 → 匯出 GPX 檔案。' },
-      { app: 'Wahoo', steps: 'ELEMNT app → 騎乘紀錄 → 分享 → 匯出 .gpx（或從 Wahoo Cloud 下載）。' },
-      { app: 'Komoot', steps: '路線頁 →「⋯」→「匯出 GPX」。' },
+      {
+        app: 'Strava',
+        mobile: '「你」→ 活動 → 右上「⋯」→「匯出 GPX」——手機就能直接匯出。',
+        web: '活動頁 → 「⋯」→「匯出 GPX」。',
+        note: '手動建立、沒有 GPS 的活動無法匯出。',
+      },
+      {
+        app: 'Garmin',
+        mobile: 'Garmin Connect 手機 app「不提供匯出」（Garmin 刻意限制）——請改用手機瀏覽器開 connect.garmin.com 登入後操作，步驟同電腦版。',
+        web: 'connect.garmin.com → 活動 → 點進該筆 → 右上齒輪 →「匯出至 GPX」；選「匯出原始資料」會得到 FIT（本工具也支援）。',
+      },
+      {
+        app: 'Bryton',
+        mobile: 'Bryton Active app → 紀錄 → 點進該筆騎乘 → 分享／匯出圖示 → 選 GPX 或 FIT。',
+        web: 'active.brytonsport.com → My Collection → 該筆騎乘 → 下載（可選 GPX／TCX／FIT）。',
+      },
+      {
+        app: 'Wahoo',
+        mobile: 'ELEMNT 手機 app → History → 點進該筆 → 分享圖示 → 匯出 .fit。',
+        note: 'ELEMNT 通常也自動同步到你連結的 Strava——從 Strava 匯出往往更快。',
+      },
+      {
+        app: 'igpsport',
+        mobile: 'igpsport app → 運動紀錄 → 點進該筆 → 分享／匯出 → GPX 或 FIT。',
+      },
+      {
+        app: 'Komoot（路線規劃）',
+        web: '規劃好的路線頁 → 「⋯」→「匯出 GPX」——還沒騎的路線也能先出圖。',
+      },
+      {
+        app: '任何碼錶（萬用備案）',
+        web: '用 USB 線接電腦，碼錶會以隨身碟顯示——打開 Activities（或 Bryton 的 Data）資料夾，裡面的 .fit 檔直接拖進本頁即可。',
+      },
     ],
     readError: '無法讀取這個 GPX 檔',
     titleLabel: '路線標題（會畫進圖裡）',
@@ -96,14 +128,46 @@ const L = {
     loadSample: 'No file handy? Load a sample route to try it out',
     sampleTitle: 'Sample route: riverside + Cat 2 climb, 22K',
     sampleWaypoint: 'Base supply stop',
-    exportSummary: 'How do I export GPX from Strava / Garmin / Bryton?',
-    guideSep: ': ',
+    exportSummary: 'First time here? How to get your ride file (GPX / FIT / TCX)',
+    guideIntroTitle: 'What are these files?',
+    guideIntro:
+      'Every ride you record, your bike computer or phone app writes a track file — GPX and TCX are text formats, FIT is the native device format. This tool accepts all three, so use whichever you can get without converting. Here is how each platform lets you take the file out:',
+    guideMobile: '📱 Phone app',
+    guideWeb: '💻 Computer / web',
     guides: [
-      { app: 'Strava', steps: 'Activity page → top-right "⋯" → "Export GPX". Routes pages have the same option.' },
-      { app: 'Garmin Connect', steps: 'Activity page → top-right gear icon → "Export to GPX".' },
-      { app: 'Bryton Active', steps: 'Activity → Share → Export GPX file.' },
-      { app: 'Wahoo', steps: 'ELEMNT app → ride history → Share → export .gpx (or download from Wahoo Cloud).' },
-      { app: 'Komoot', steps: 'Route page → "⋯" → "Export GPX".' },
+      {
+        app: 'Strava',
+        mobile: 'You → Activities → top-right “⋯” → “Export GPX” — works right on the phone.',
+        web: 'Activity page → “⋯” → “Export GPX”.',
+        note: 'Manually created activities without GPS cannot be exported.',
+      },
+      {
+        app: 'Garmin',
+        mobile: 'The Garmin Connect phone app does NOT offer export (an intentional Garmin limitation) — open connect.garmin.com in your phone browser instead; the steps match the desktop flow.',
+        web: 'connect.garmin.com → Activities → open the ride → top-right gear icon → “Export to GPX”; “Export Original” gives you FIT (also supported here).',
+      },
+      {
+        app: 'Bryton',
+        mobile: 'Bryton Active app → records → open the ride → share/export icon → GPX or FIT.',
+        web: 'active.brytonsport.com → My Collection → the ride → download (GPX / TCX / FIT).',
+      },
+      {
+        app: 'Wahoo',
+        mobile: 'ELEMNT phone app → History → open the ride → share icon → export .fit.',
+        note: 'ELEMNT usually auto-syncs to your linked Strava too — exporting from Strava is often quicker.',
+      },
+      {
+        app: 'igpsport',
+        mobile: 'igpsport app → activity records → open the ride → share/export → GPX or FIT.',
+      },
+      {
+        app: 'Komoot (route planning)',
+        web: 'Planned route page → “⋯” → “Export GPX” — chart a route before you have even ridden it.',
+      },
+      {
+        app: 'Any bike computer (universal fallback)',
+        web: 'Plug it into a computer over USB — it shows up as a drive. Open the Activities (or Bryton “Data”) folder and drag a .fit file straight onto this page.',
+      },
     ],
     readError: 'Could not read this GPX file',
     titleLabel: 'Route title (drawn into the image)',
@@ -635,11 +699,28 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
 
       <details className="rounded-[var(--radius-card)] border border-edge bg-surface p-4 text-sm">
         <summary className="cursor-pointer text-muted hover:text-accent">{t.exportSummary}</summary>
-        <ul className="mt-3 space-y-2">
-          {t.guides.map((g) => (
-            <li key={g.app}><span className="font-semibold text-ink">{g.app}</span><span className="text-muted">{t.guideSep}{g.steps}</span></li>
-          ))}
-        </ul>
+        <div className="mt-3 space-y-3">
+          <div>
+            <p className="font-semibold text-ink">{t.guideIntroTitle}</p>
+            <p className="mt-1 text-muted">{t.guideIntro}</p>
+          </div>
+          <div className="space-y-2">
+            {t.guides.map((g) => (
+              <details key={g.app} className="rounded-lg border border-edge bg-bg px-3 py-2">
+                <summary className="cursor-pointer font-semibold text-ink">{g.app}</summary>
+                <div className="mt-2 space-y-1.5 text-muted">
+                  {'mobile' in g && g.mobile && (
+                    <p><span className="mr-1 font-semibold text-ink">{t.guideMobile}</span>{g.mobile}</p>
+                  )}
+                  {'web' in g && g.web && (
+                    <p><span className="mr-1 font-semibold text-ink">{t.guideWeb}</span>{g.web}</p>
+                  )}
+                  {'note' in g && g.note && <p className="text-xs">💡 {g.note}</p>}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
       </details>
 
       {error && <p className="text-center text-sm text-red-500">{error}</p>}
