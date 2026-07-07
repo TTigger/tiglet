@@ -4,9 +4,12 @@ import type { Locale } from '../lib/i18n';
 import {
   parseGpx,
   parseGpxName,
+  parseTcx,
+  fitRecordsToTrackPoints,
   parseGpxWaypoints,
   locateOnTrack,
   buildProfile,
+  type TrackPoint,
   totalAscentM,
   detectClimbs,
   gradientBuckets,
@@ -27,8 +30,11 @@ export interface Waypoint {
 
 const L = {
   zh: {
-    upload: '上傳 GPX 檔案',
-    uploadNote: '檔案只在你的瀏覽器解析，不會上傳到任何伺服器。',
+    upload: '上傳 GPX / FIT / TCX 檔案',
+    uploadNote: '也可以直接把檔案拖進來。檔案只在你的瀏覽器解析，不會上傳到任何伺服器。',
+    loadSample: '沒有檔案？先載入範例路線試玩',
+    sampleTitle: '範例路線：河濱＋二級坡 22K',
+    sampleWaypoint: '山腳補給站',
     exportSummary: '怎麼從 Strava / Garmin / Bryton 匯出 GPX？',
     guideSep: '：',
     guides: [
@@ -85,8 +91,11 @@ const L = {
     footnote: '爬坡分級採「長度 × 平均坡度」通用分數制（≥8000 四級 … ≥80000 HC），與正式賽事官方分級可能不同。 海拔已做平滑處理以消除 GPS 雜訊。',
   },
   en: {
-    upload: 'Upload GPX file',
-    uploadNote: 'The file is parsed entirely in your browser — never uploaded to any server.',
+    upload: 'Upload a GPX / FIT / TCX file',
+    uploadNote: 'You can also drag a file here. It is parsed entirely in your browser — never uploaded to any server.',
+    loadSample: 'No file handy? Load a sample route to try it out',
+    sampleTitle: 'Sample route: riverside + Cat 2 climb, 22K',
+    sampleWaypoint: 'Base supply stop',
     exportSummary: 'How do I export GPX from Strava / Garmin / Bryton?',
     guideSep: ': ',
     guides: [
@@ -513,37 +522,83 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   const [themeIdx, setThemeIdx] = useState(0);
   const [watermark, setWatermark] = useState(true);
+  const [dragging, setDragging] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
   const theme = THEMES[themeIdx];
 
-  async function onFile(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // 共同管線：軌跡點（＋可選的航點/標題）→ 剖面、爬坡、地標
+  function applyTrack(points: TrackPoint[], autoWaypoints: Waypoint[], newTitle: string) {
+    const p = buildProfile(points);
+    const cs = detectClimbs(p.samples);
+    setProfile(p);
+    setClimbs(cs);
+    setClimbNames(Array(cs.length).fill(''));
+    setWaypoints(autoWaypoints);
+    setDetailIdx(null);
+    setTitle(newTitle);
+  }
+
+  async function loadFile(file: File) {
     setError('');
     try {
+      const ext = file.name.toLowerCase().split('.').pop() ?? '';
+      if (ext === 'fit') {
+        // FIT 為二進位格式：解析器動態載入（沿用 xlsx/marked 前例）
+        const { default: FitParser } = await import('fit-file-parser');
+        const buf = await file.arrayBuffer();
+        const records = await new Promise<import('../lib/gpx').FitRecordLike[]>((resolve, reject) => {
+          new FitParser({ mode: 'list' }).parse(buf, (err: unknown, data: { records?: import('../lib/gpx').FitRecordLike[] }) => {
+            if (err) reject(new Error(t.readError));
+            else resolve(data?.records ?? []);
+          });
+        });
+        applyTrack(fitRecordsToTrackPoints(records), [], file.name.replace(/\.fit$/i, ''));
+        return;
+      }
       const xml = await file.text();
+      if (ext === 'tcx') {
+        applyTrack(parseTcx(xml), [], file.name.replace(/\.tcx$/i, ''));
+        return;
+      }
       const points = parseGpx(xml);
-      const p = buildProfile(points);
-      const cs = detectClimbs(p.samples);
       // GPX 自帶的 <wpt> 航點（補給站/地標）自動帶入地標編輯器，仍可改可刪
       const autoWaypoints: Waypoint[] = parseGpxWaypoints(xml)
         .map((w) => ({ w, loc: locateOnTrack(points, w.lat, w.lon) }))
         .filter((x): x is { w: ReturnType<typeof parseGpxWaypoints>[number]; loc: NonNullable<ReturnType<typeof locateOnTrack>> } => x.loc !== null)
         .map(({ w, loc }) => ({ km: (loc.distanceM / 1000).toFixed(1), name: w.name }));
-      setProfile(p);
-      setClimbs(cs);
-      setClimbNames(Array(cs.length).fill(''));
-      setWaypoints(autoWaypoints);
-      setDetailIdx(null);
-      setTitle(parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
+      applyTrack(points, autoWaypoints, parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
     } catch (err) {
       setProfile(null);
       setError(err instanceof Error ? err.message : t.readError);
-    } finally {
-      e.target.value = '';
     }
+  }
+
+  async function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await loadFile(file);
+    e.target.value = '';
+  }
+
+  // 零檔案體驗：合成一條 12km 平路＋8km 6% 二級坡＋回程的範例路線
+  function loadSample() {
+    setError('');
+    const M_PER_DEG_LAT = 111_320;
+    const stepM = 50;
+    let lat = 25.05;
+    let ele = 25;
+    const points: TrackPoint[] = [{ lat, lon: 121.53, ele }];
+    const segments: [number, number][] = [[6000, 0.4], [8000, 6], [3000, -4], [5000, 0.3]];
+    for (const [lengthM, gradPct] of segments) {
+      for (let i = 0; i < Math.round(lengthM / stepM); i++) {
+        lat += stepM / M_PER_DEG_LAT;
+        ele += (stepM * gradPct) / 100;
+        points.push({ lat, lon: 121.53, ele });
+      }
+    }
+    applyTrack(points, [{ km: '10.0', name: t.sampleWaypoint }], t.sampleTitle);
   }
 
   function downloadPng() {
@@ -562,12 +617,20 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <div className="rounded-[var(--radius-card)] border border-dashed border-edge bg-surface p-4 text-center">
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) loadFile(f); }}
+        className={`rounded-[var(--radius-card)] border border-dashed p-4 text-center transition-colors ${dragging ? 'border-accent bg-accent/5' : 'border-edge bg-surface'}`}
+      >
         <label className="cursor-pointer text-accent hover:underline">
           {t.upload}
-          <input type="file" accept=".gpx" onChange={onFile} className="hidden" />
+          <input type="file" accept=".gpx,.fit,.tcx" onChange={onFile} className="hidden" />
         </label>
         <p className="mt-1 text-xs text-muted">{t.uploadNote}</p>
+        <button onClick={loadSample} className="mt-2 text-xs text-muted underline hover:text-accent">
+          {t.loadSample}
+        </button>
       </div>
 
       <details className="rounded-[var(--radius-card)] border border-edge bg-surface p-4 text-sm">

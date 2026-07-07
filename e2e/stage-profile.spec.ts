@@ -99,6 +99,45 @@ test('GPX 內建航點自動帶入地標並畫進圖', async ({ page }) => {
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/山腰補給 \d+m/);
 });
 
+test('TCX 檔也能生成剖面圖', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  const M_PER_DEG_LAT = 111_320;
+  const pts: string[] = [];
+  let lat = 25.0;
+  let ele = 100;
+  for (let i = 0; i < 120; i++) {
+    lat += 50 / M_PER_DEG_LAT;
+    ele += 2.5; // 5% 連續爬坡 6km
+    pts.push(
+      `<Trackpoint><Position><LatitudeDegrees>${lat.toFixed(7)}</LatitudeDegrees><LongitudeDegrees>121.5</LongitudeDegrees></Position><AltitudeMeters>${ele.toFixed(1)}</AltitudeMeters></Trackpoint>`
+    );
+  }
+  const tcx = `<?xml version="1.0"?><TrainingCenterDatabase><Activities><Activity><Lap><Track>${pts.join('')}</Track></Lap></Activity></Activities></TrainingCenterDatabase>`;
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'ride.tcx',
+    mimeType: 'application/xml',
+    buffer: Buffer.from(tcx, 'utf-8'),
+  });
+
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+  await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue('ride');
+});
+
+test('零檔案：載入範例路線直接出圖', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  await page.getByRole('button', { name: /載入範例路線/ }).click();
+
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+  await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue(/範例路線/);
+  // 範例自帶一個地標
+  await expect(page.getByLabel('地標 1 名稱')).toHaveValue('山腳補給站');
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
