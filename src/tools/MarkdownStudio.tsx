@@ -5,6 +5,56 @@ import CopyButton from '../components/CopyButton';
 import TreeView, { type TreeViewNode } from '../components/TreeView';
 import { extractOutline, mdStats, type OutlineNode } from '../lib/markdown';
 import { textStats } from '../lib/textStats';
+import type { Locale } from '../lib/i18n';
+
+const L = {
+  zh: {
+    placeholder: '貼上 Markdown，或用右上角上傳 .md 檔…',
+    ariaInput: 'Markdown 輸入',
+    fillExample: '填入範例',
+    upload: '上傳 .md',
+    sample: `# 我的筆記\n\n## 今天的騎乘\n爬了 **風櫃嘴**，均速還行。\n\n### 補給\n- 香蕉 ×2\n- 能量膠 ×1\n\n## 下週計畫\n1. 間歇訓練\n2. [看路線](https://example.com)\n`,
+    renderError: '渲染失敗，請確認 Markdown 內容',
+    tabPreview: '預覽',
+    tabOutline: '結構',
+    tabStats: '統計',
+    preview: '預覽',
+    outlineHint: '點任意標題跳到預覽對應位置',
+    noHeadings: '沒有偵測到標題（# 開頭的行）',
+    statHeadings: '標題',
+    statLinks: '連結',
+    statImages: '圖片',
+    statCodeBlocks: '程式碼區塊',
+    statCjk: '中文字數',
+    statWords: '英文單字',
+    statLines: '行數',
+    statParagraphs: '段落',
+    footnote: '渲染結果經 DOMPurify 清洗（HTML/script 一律過濾）；檔案只在你的瀏覽器處理。',
+  },
+  en: {
+    placeholder: 'Paste Markdown, or upload a .md file from the top right…',
+    ariaInput: 'Markdown input',
+    fillExample: 'Fill example',
+    upload: 'Upload .md',
+    sample: `# Ride notes\n\n## Today's ride\nClimbed **Fengguizui** — average speed was decent.\n\n### Fuel\n- Bananas ×2\n- Energy gel ×1\n\n## Next week\n1. Interval training\n2. [Route map](https://example.com)\n`,
+    renderError: 'Rendering failed — please check the Markdown content',
+    tabPreview: 'Preview',
+    tabOutline: 'Outline',
+    tabStats: 'Stats',
+    preview: 'Preview',
+    outlineHint: 'Click any heading to jump to it in the preview',
+    noHeadings: 'No headings detected (lines starting with #)',
+    statHeadings: 'Headings',
+    statLinks: 'Links',
+    statImages: 'Images',
+    statCodeBlocks: 'Code blocks',
+    statCjk: 'CJK characters',
+    statWords: 'English words',
+    statLines: 'Lines',
+    statParagraphs: 'Paragraphs',
+    footnote: 'Rendered output is sanitized with DOMPurify (raw HTML/scripts are always stripped); files are processed entirely in your browser.',
+  },
+} as const;
 
 const areaClass =
   'w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 font-mono text-sm text-ink outline-none focus:border-accent';
@@ -21,9 +71,8 @@ function toTreeViewNode(n: OutlineNode): TreeViewNode {
   };
 }
 
-const SAMPLE = `# 我的筆記\n\n## 今天的騎乘\n爬了 **風櫃嘴**，均速還行。\n\n### 補給\n- 香蕉 ×2\n- 能量膠 ×1\n\n## 下週計畫\n1. 間歇訓練\n2. [看路線](https://example.com)\n`;
-
-export default function MarkdownStudio() {
+export default function MarkdownStudio({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [md, setMd] = useState('');
   const [tab, setTab] = useState('preview');
   const [html, setHtml] = useState('');
@@ -47,7 +96,7 @@ export default function MarkdownStudio() {
           setRenderError('');
         }
       } catch {
-        if (!cancelled) setRenderError('渲染失敗，請確認 Markdown 內容');
+        if (!cancelled) setRenderError(t.renderError);
       }
     })();
     return () => { cancelled = true; };
@@ -84,16 +133,16 @@ export default function MarkdownStudio() {
           value={md}
           onChange={(e) => setMd(e.target.value)}
           rows={10}
-          placeholder="貼上 Markdown，或用右上角上傳 .md 檔…"
+          placeholder={t.placeholder}
           className={areaClass}
-          aria-label="Markdown 輸入"
+          aria-label={t.ariaInput}
         />
         <div className="absolute right-3 top-3 flex gap-3 text-xs">
           {!md && (
-            <button onClick={() => setMd(SAMPLE)} className="text-muted hover:text-accent">填入範例</button>
+            <button onClick={() => setMd(t.sample)} className="text-muted hover:text-accent">{t.fillExample}</button>
           )}
           <label className="cursor-pointer text-muted hover:text-accent">
-            上傳 .md
+            {t.upload}
             <input type="file" accept=".md,.markdown,.txt" onChange={onFile} className="hidden" />
           </label>
         </div>
@@ -104,9 +153,9 @@ export default function MarkdownStudio() {
           <div className="flex justify-center">
             <Tabs
               tabs={[
-                { id: 'preview', label: '預覽' },
-                { id: 'outline', label: '結構' },
-                { id: 'stats', label: '統計' },
+                { id: 'preview', label: t.tabPreview },
+                { id: 'outline', label: t.tabOutline },
+                { id: 'stats', label: t.tabStats },
               ]}
               active={tab}
               onChange={setTab}
@@ -116,7 +165,7 @@ export default function MarkdownStudio() {
           {tab === 'preview' && (
             <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
               <div className="flex items-center justify-between border-b border-edge px-4 py-2">
-                <span className="text-sm text-muted">預覽</span>
+                <span className="text-sm text-muted">{t.preview}</span>
                 {html && !renderError && <CopyButton value={html} />}
               </div>
               <div className="px-6 py-4">
@@ -131,12 +180,12 @@ export default function MarkdownStudio() {
 
           {tab === 'outline' && (
             <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
-              <div className="border-b border-edge px-4 py-2 text-sm text-muted">點任意標題跳到預覽對應位置</div>
+              <div className="border-b border-edge px-4 py-2 text-sm text-muted">{t.outlineHint}</div>
               <div className="max-h-[32rem] overflow-y-auto px-2 py-1">
                 {outline.length ? (
                   <TreeView nodes={outline.map(toTreeViewNode)} onSelect={onOutlineSelect} />
                 ) : (
-                  <p className="px-3 py-4 text-sm text-muted">沒有偵測到標題（# 開頭的行）</p>
+                  <p className="px-3 py-4 text-sm text-muted">{t.noHeadings}</p>
                 )}
               </div>
             </div>
@@ -145,14 +194,14 @@ export default function MarkdownStudio() {
           {tab === 'stats' && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
-                ['標題', stats.headings],
-                ['連結', stats.links],
-                ['圖片', stats.images],
-                ['程式碼區塊', stats.codeBlocks],
-                ['中文字數', ts.cjkChars],
-                ['英文單字', ts.latinWords],
-                ['行數', ts.lines],
-                ['段落', ts.paragraphs],
+                [t.statHeadings, stats.headings],
+                [t.statLinks, stats.links],
+                [t.statImages, stats.images],
+                [t.statCodeBlocks, stats.codeBlocks],
+                [t.statCjk, ts.cjkChars],
+                [t.statWords, ts.latinWords],
+                [t.statLines, ts.lines],
+                [t.statParagraphs, ts.paragraphs],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-lg border border-edge bg-surface px-3 py-3 text-center">
                   <div className="font-mono text-2xl tabular-nums text-ink">{value}</div>
@@ -164,7 +213,7 @@ export default function MarkdownStudio() {
         </>
       )}
 
-      <p className="text-xs text-muted">渲染結果經 DOMPurify 清洗（HTML/script 一律過濾）；檔案只在你的瀏覽器處理。</p>
+      <p className="text-xs text-muted">{t.footnote}</p>
     </div>
   );
 }
