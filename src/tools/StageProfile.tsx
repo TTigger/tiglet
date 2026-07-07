@@ -184,12 +184,41 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
         </g>
       ))}
 
-      {/* 起終點 */}
+      {/* 起終點旗標：起點三角旗、終點格紋旗（賽事通用圖示） */}
       <g fontFamily="system-ui, sans-serif" fontSize={11}>
-        <circle cx={x(0)} cy={y(samples[0].ele)} r={4} fill={theme.ink} />
-        <text x={x(0)} y={baseY + 18} fill={theme.ink} textAnchor="start" fontWeight={600}>起點</text>
-        <circle cx={x(total)} cy={y(samples[samples.length - 1].ele)} r={4} fill={theme.ink} />
-        <text x={x(total)} y={baseY + 18} fill={theme.ink} textAnchor="end" fontWeight={600}>終點</text>
+        {(() => {
+          const sx = x(0);
+          const sy = y(samples[0].ele);
+          const fx = x(total);
+          const fy = y(samples[samples.length - 1].ele);
+          const sq = 4; // 格紋格邊長
+          const checks: React.ReactNode[] = [];
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 4; c++) {
+              if ((r + c) % 2 === 0) {
+                checks.push(
+                  <rect key={`${r}-${c}`} x={fx - sq * 4 + c * sq} y={fy - 26 + r * sq} width={sq} height={sq} fill={theme.ink} />
+                );
+              }
+            }
+          }
+          return (
+            <>
+              {/* 起點：旗桿＋三角旗 */}
+              <line x1={sx} y1={sy} x2={sx} y2={sy - 24} stroke={theme.ink} strokeWidth={1.5} />
+              <path d={`M${sx},${sy - 24} L${sx + 15},${sy - 19} L${sx},${sy - 14} Z`} fill={theme.accent} />
+              <circle cx={sx} cy={sy} r={2.5} fill={theme.ink} />
+              <text x={sx} y={baseY + 18} fill={theme.ink} textAnchor="start" fontWeight={600}>起點</text>
+
+              {/* 終點：旗桿＋格紋旗（向左展開，避免出界） */}
+              <line x1={fx} y1={fy} x2={fx} y2={fy - 26} stroke={theme.ink} strokeWidth={1.5} />
+              <rect x={fx - sq * 4} y={fy - 26} width={sq * 4} height={sq * 3} fill={theme.bg} stroke={theme.ink} strokeWidth={0.75} />
+              {checks}
+              <circle cx={fx} cy={fy} r={2.5} fill={theme.ink} />
+              <text x={fx} y={baseY + 18} fill={theme.ink} textAnchor="end" fontWeight={600}>終點</text>
+            </>
+          );
+        })()}
       </g>
 
       {/* 自訂地標（補給站/城鎮）：點 + 虛線落點 + 45° 斜排名稱與海拔 */}
