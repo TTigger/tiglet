@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   parseGpx,
   parseGpxName,
+  parseTcx,
+  fitRecordsToTrackPoints,
   parseGpxWaypoints,
   locateOnTrack,
   haversineM,
@@ -137,6 +139,72 @@ describe('gradientBuckets', () => {
     expect(buckets[0].distanceM).toBeGreaterThan(3000);
     // 陡坡帶要存在
     expect(buckets[buckets.length - 1].distanceM).toBeGreaterThan(1000);
+  });
+});
+
+describe('parseTcx', () => {
+  function syntheticTcx(): string {
+    const pts = [
+      [25.0, 121.5, 100],
+      [25.001, 121.5, 110],
+      [25.002, 121.5, 120],
+    ]
+      .map(
+        ([lat, lon, ele]) =>
+          `<Trackpoint><Position><LatitudeDegrees>${lat}</LatitudeDegrees><LongitudeDegrees>${lon}</LongitudeDegrees></Position><AltitudeMeters>${ele}</AltitudeMeters></Trackpoint>`
+      )
+      .join('');
+    return `<?xml version="1.0"?><TrainingCenterDatabase><Activities><Activity><Lap><Track>${pts}</Track></Lap></Activity></Activities></TrainingCenterDatabase>`;
+  }
+
+  it('parses trackpoints with position and altitude', () => {
+    const pts = parseTcx(syntheticTcx());
+    expect(pts).toHaveLength(3);
+    expect(pts[0]).toEqual({ lat: 25.0, lon: 121.5, ele: 100 });
+  });
+
+  it('skips trackpoints without position (心率-only 紀錄常見)', () => {
+    const xml = syntheticTcx().replace('</Track>', '<Trackpoint><AltitudeMeters>50</AltitudeMeters></Trackpoint></Track>');
+    expect(parseTcx(xml)).toHaveLength(3);
+  });
+
+  it('throws on invalid or empty TCX', () => {
+    expect(() => parseTcx('garbage')).toThrow();
+    expect(() => parseTcx('<TrainingCenterDatabase></TrainingCenterDatabase>')).toThrow();
+  });
+});
+
+describe('fitRecordsToTrackPoints', () => {
+  it('accepts degree coordinates as-is', () => {
+    const pts = fitRecordsToTrackPoints([
+      { position_lat: 25.0, position_long: 121.5, altitude: 100 },
+      { position_lat: 25.001, position_long: 121.5, altitude: 110 },
+    ]);
+    expect(pts[0]).toEqual({ lat: 25.0, lon: 121.5, ele: 100 });
+  });
+
+  it('converts semicircle coordinates to degrees', () => {
+    const semi = (deg: number) => Math.round(deg / (180 / 2 ** 31));
+    const pts = fitRecordsToTrackPoints([
+      { position_lat: semi(25.0), position_long: semi(121.5), altitude: 100 },
+      { position_lat: semi(25.001), position_long: semi(121.5), altitude: 110 },
+    ]);
+    expect(pts[0].lat).toBeCloseTo(25.0, 5);
+    expect(pts[0].lon).toBeCloseTo(121.5, 5);
+  });
+
+  it('prefers enhanced_altitude and skips positionless records', () => {
+    const pts = fitRecordsToTrackPoints([
+      { position_lat: 25, position_long: 121.5, altitude: 100, enhanced_altitude: 105 },
+      { altitude: 99 }, // 無座標（隧道/室內）→ 跳過
+      { position_lat: 25.001, position_long: 121.5, altitude: 110 },
+    ]);
+    expect(pts).toHaveLength(2);
+    expect(pts[0].ele).toBe(105);
+  });
+
+  it('throws when fewer than 2 usable records', () => {
+    expect(() => fitRecordsToTrackPoints([{ altitude: 1 }])).toThrow();
   });
 });
 

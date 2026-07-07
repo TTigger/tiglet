@@ -56,6 +56,49 @@ export function parseGpxName(xml: string): string | null {
   return name || null;
 }
 
+// TCX（Training Center XML）軌跡點解析——Garmin 生態常見的另一種匯出格式
+export function parseTcx(xml: string): TrackPoint[] {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('TCX 解析失敗：不是有效的 XML');
+  const points: TrackPoint[] = [];
+  for (const n of Array.from(doc.querySelectorAll('Trackpoint'))) {
+    const lat = Number(n.querySelector('Position > LatitudeDegrees')?.textContent);
+    const lon = Number(n.querySelector('Position > LongitudeDegrees')?.textContent);
+    const ele = Number(n.querySelector('AltitudeMeters')?.textContent);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Number.isFinite(ele)) points.push({ lat, lon, ele });
+  }
+  if (points.length < 2) throw new Error('TCX 裡找不到含海拔的軌跡點');
+  return points;
+}
+
+// FIT 紀錄 → 軌跡點：容忍度數或半圓（semicircle）兩種座標單位
+const SEMI_TO_DEG = 180 / 2 ** 31;
+
+export interface FitRecordLike {
+  position_lat?: number;
+  position_long?: number;
+  altitude?: number;
+  enhanced_altitude?: number;
+}
+
+export function fitRecordsToTrackPoints(records: FitRecordLike[]): TrackPoint[] {
+  const points: TrackPoint[] = [];
+  for (const r of records) {
+    let lat = r.position_lat;
+    let lon = r.position_long;
+    const ele = r.enhanced_altitude ?? r.altitude;
+    if (lat === undefined || lon === undefined || ele === undefined) continue;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(ele)) continue;
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      lat *= SEMI_TO_DEG;
+      lon *= SEMI_TO_DEG;
+    }
+    points.push({ lat, lon, ele });
+  }
+  if (points.length < 2) throw new Error('FIT 裡找不到含座標與海拔的紀錄');
+  return points;
+}
+
 export interface GpxWaypoint {
   name: string;
   lat: number;
