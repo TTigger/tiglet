@@ -6,6 +6,7 @@ import {
   parseGpxName,
   parseTcx,
   fitRecordsToTrackPoints,
+  checkpointsToTrackPoints,
   parseGpxWaypoints,
   locateOnTrack,
   buildProfile,
@@ -35,6 +36,16 @@ const L = {
     loadSample: '沒有檔案？先載入範例路線試玩',
     sampleTitle: '範例路線：河濱＋二級坡 22K',
     sampleWaypoint: '山腳補給站',
+    manualSummary: '或者：手動建路線（免檔案，適合賽事／揪團規劃）',
+    manualHint: '輸入幾個檢查點（累積距離＋海拔），例如 0k／100m、12k／820m——檢查點之間會線性內插。',
+    manualKm: '距離 (km)',
+    manualEle: '海拔 (m)',
+    manualAdd: '＋ 新增檢查點',
+    manualBuild: '生成剖面圖',
+    manualTitle: '手動路線',
+    manualDeleteAria: (i: number) => `刪除檢查點 ${i}`,
+    manualKmAria: (i: number) => `檢查點 ${i} 距離`,
+    manualEleAria: (i: number) => `檢查點 ${i} 海拔`,
     exportSummary: '第一次用？如何取得你的騎乘檔案（GPX / FIT / TCX）',
     guideIntroTitle: '這些檔案是什麼？',
     guideIntro:
@@ -128,6 +139,16 @@ const L = {
     loadSample: 'No file handy? Load a sample route to try it out',
     sampleTitle: 'Sample route: riverside + Cat 2 climb, 22K',
     sampleWaypoint: 'Base supply stop',
+    manualSummary: 'Or: build a route manually (no file — great for race/route planning)',
+    manualHint: 'Enter a few checkpoints (cumulative distance + elevation), e.g. 0k/100m, 12k/820m — elevation is interpolated between checkpoints.',
+    manualKm: 'Distance (km)',
+    manualEle: 'Elevation (m)',
+    manualAdd: '+ Add checkpoint',
+    manualBuild: 'Build profile',
+    manualTitle: 'Manual route',
+    manualDeleteAria: (i: number) => `Delete checkpoint ${i}`,
+    manualKmAria: (i: number) => `Checkpoint ${i} distance`,
+    manualEleAria: (i: number) => `Checkpoint ${i} elevation`,
     exportSummary: 'First time here? How to get your ride file (GPX / FIT / TCX)',
     guideIntroTitle: 'What are these files?',
     guideIntro:
@@ -587,6 +608,10 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [themeIdx, setThemeIdx] = useState(0);
   const [watermark, setWatermark] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [checkpoints, setCheckpoints] = useState<Array<{ km: string; ele: string }>>([
+    { km: '0', ele: '' },
+    { km: '', ele: '' },
+  ]);
   const [title, setTitle] = useState('');
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -644,6 +669,17 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     if (!file) return;
     await loadFile(file);
     e.target.value = '';
+  }
+
+  // 手動檢查點 → 合成軌跡 → 同一條出圖管線
+  function buildManualRoute() {
+    setError('');
+    try {
+      const cps = checkpoints.map((c) => ({ km: Number(c.km), ele: Number(c.ele) }));
+      applyTrack(checkpointsToTrackPoints(cps), [], t.manualTitle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.readError);
+    }
   }
 
   // 零檔案體驗：合成一條 12km 平路＋8km 6% 二級坡＋回程的範例路線
@@ -719,6 +755,60 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 </div>
               </details>
             ))}
+          </div>
+        </div>
+      </details>
+
+      <details className="rounded-[var(--radius-card)] border border-edge bg-surface p-4 text-sm">
+        <summary className="cursor-pointer text-muted hover:text-accent">{t.manualSummary}</summary>
+        <div className="mt-3 space-y-3">
+          <p className="text-muted">{t.manualHint}</p>
+          <div className="space-y-2">
+            {checkpoints.map((c, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={c.km}
+                  onChange={(e) => setCheckpoints((prev) => prev.map((p, j) => (j === i ? { ...p, km: e.target.value } : p)))}
+                  placeholder="0"
+                  aria-label={t.manualKmAria(i + 1)}
+                  className="w-24 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                />
+                <span className="text-xs text-muted">{t.manualKm}</span>
+                <input
+                  type="number"
+                  value={c.ele}
+                  onChange={(e) => setCheckpoints((prev) => prev.map((p, j) => (j === i ? { ...p, ele: e.target.value } : p)))}
+                  placeholder="100"
+                  aria-label={t.manualEleAria(i + 1)}
+                  className="w-24 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                />
+                <span className="text-xs text-muted">{t.manualEle}</span>
+                {checkpoints.length > 2 && (
+                  <button
+                    onClick={() => setCheckpoints((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={t.manualDeleteAria(i + 1)}
+                    className="text-sm text-muted hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCheckpoints((prev) => [...prev, { km: '', ele: '' }])}
+              className="text-sm text-accent hover:underline"
+            >
+              {t.manualAdd}
+            </button>
+            <button
+              onClick={buildManualRoute}
+              className="rounded-lg bg-accent px-4 py-1.5 text-sm text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+            >
+              {t.manualBuild}
+            </button>
           </div>
         </div>
       </details>

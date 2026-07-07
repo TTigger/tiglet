@@ -4,6 +4,7 @@ import {
   parseGpxName,
   parseTcx,
   fitRecordsToTrackPoints,
+  checkpointsToTrackPoints,
   parseGpxWaypoints,
   locateOnTrack,
   haversineM,
@@ -139,6 +140,41 @@ describe('gradientBuckets', () => {
     expect(buckets[0].distanceM).toBeGreaterThan(3000);
     // 陡坡帶要存在
     expect(buckets[buckets.length - 1].distanceM).toBeGreaterThan(1000);
+  });
+});
+
+describe('checkpointsToTrackPoints（手動建路線）', () => {
+  it('兩個檢查點 → 線性內插的軌跡', () => {
+    const pts = checkpointsToTrackPoints([
+      { km: 0, ele: 100 },
+      { km: 10, ele: 600 },
+    ]);
+    expect(pts[0].ele).toBe(100);
+    expect(pts[pts.length - 1].ele).toBeCloseTo(600, 5);
+    // 中點 5km 處 ≈ 350m
+    const mid = pts[Math.floor(pts.length / 2)];
+    expect(mid.ele).toBeCloseTo(350, 0);
+    // 生成的軌跡跑完整條管線：10km @5% → 一段二級坡
+    const profile = buildProfile(pts);
+    expect(profile.totalDistanceM).toBeGreaterThan(9800);
+    const climbs = detectClimbs(profile.samples);
+    expect(climbs).toHaveLength(1);
+    expect(climbs[0].category).toBe('2');
+  });
+
+  it('未排序輸入自動排序、同距離去重', () => {
+    const pts = checkpointsToTrackPoints([
+      { km: 10, ele: 600 },
+      { km: 0, ele: 100 },
+      { km: 0, ele: 120 }, // 同 km → 留後者
+    ]);
+    expect(pts[0].ele).toBe(120);
+  });
+
+  it('無效輸入拋錯', () => {
+    expect(() => checkpointsToTrackPoints([{ km: 0, ele: 100 }])).toThrow();
+    expect(() => checkpointsToTrackPoints([{ km: 0, ele: 100 }, { km: 0.05, ele: 101 }])).toThrow();
+    expect(() => checkpointsToTrackPoints([{ km: NaN, ele: 100 }, { km: 1, ele: 200 }])).toThrow();
   });
 });
 

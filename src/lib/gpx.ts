@@ -56,6 +56,44 @@ export function parseGpxName(xml: string): string | null {
   return name || null;
 }
 
+// 手動建路線：距離＋海拔檢查點 → 合成軌跡點（免檔案出圖，賽事規劃用）。
+// 檢查點之間海拔線性內插；地理座標為合成直線（僅供剖面計算，不代表實際路徑）。
+export interface RouteCheckpoint {
+  km: number;
+  ele: number;
+}
+
+export function checkpointsToTrackPoints(checkpoints: RouteCheckpoint[]): TrackPoint[] {
+  const valid = checkpoints
+    .filter((c) => Number.isFinite(c.km) && Number.isFinite(c.ele) && c.km >= 0)
+    .sort((a, b) => a.km - b.km)
+    // 相同距離只留最後一筆
+    .filter((c, i, arr) => i === arr.length - 1 || arr[i + 1].km !== c.km);
+  if (valid.length < 2) throw new Error('至少需要兩個有效的檢查點（距離＋海拔）');
+  const totalM = (valid[valid.length - 1].km - valid[0].km) * 1000;
+  if (totalM < 100) throw new Error('路線總長至少要 0.1 公里');
+
+  const M_PER_DEG_LAT = 111_320;
+  const startKm = valid[0].km;
+  const points: TrackPoint[] = [];
+  const eleAtKm = (km: number): number => {
+    let i = 0;
+    while (i < valid.length - 2 && valid[i + 1].km < km) i++;
+    const a = valid[i];
+    const b = valid[i + 1];
+    const t = b.km === a.km ? 0 : (km - a.km) / (b.km - a.km);
+    return a.ele + t * (b.ele - a.ele);
+  };
+  for (let m = 0; m <= totalM; m += STEP_M) {
+    points.push({ lat: 25.0 + m / M_PER_DEG_LAT, lon: 121.5, ele: eleAtKm(startKm + m / 1000) });
+  }
+  const last = points[points.length - 1];
+  if (last.lat !== 25.0 + totalM / M_PER_DEG_LAT) {
+    points.push({ lat: 25.0 + totalM / M_PER_DEG_LAT, lon: 121.5, ele: valid[valid.length - 1].ele });
+  }
+  return points;
+}
+
 // TCX（Training Center XML）軌跡點解析——Garmin 生態常見的另一種匯出格式
 export function parseTcx(xml: string): TrackPoint[] {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
