@@ -3,7 +3,16 @@ import Tabs from '../components/Tabs';
 import CopyButton from '../components/CopyButton';
 import { useUrlState } from '../lib/urlState';
 import { CATEGORIES, TEMPERATURE, convert, formatNumber, type UnitCategory, type UnitDef } from '../lib/units';
-import { CURRENCIES, convertCurrency, formatMoney, type Rates } from '../lib/currency';
+import {
+  CURRENCIES,
+  convertCurrency,
+  formatMoney,
+  FALLBACK_RATES,
+  FALLBACK_RATES_DATE,
+  saveRatesCache,
+  loadRatesCache,
+  type Rates,
+} from '../lib/currency';
 
 const CATEGORY_LIST: { id: UnitCategory; label: string; units: UnitDef[] }[] = [
   { id: 'length', label: CATEGORIES.length.label, units: CATEGORIES.length.units },
@@ -93,7 +102,7 @@ const RATES_API = 'https://open.er-api.com/v6/latest/USD';
 function CurrencyPanel() {
   const [rates, setRates] = useState<Rates | null>(null);
   const [updated, setUpdated] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [stale, setStale] = useState<'cache' | 'fallback' | null>(null); // 非即時匯率的來源標示
   const [loading, setLoading] = useState(true);
   const [amount, setAmount] = useUrlState('amt', '100');
   const [fromRaw, setFrom] = useUrlState('cf', 'USD');
@@ -105,6 +114,19 @@ function CurrencyPanel() {
 
   useEffect(() => {
     let active = true;
+    // 三層備援：即時 API → 上次成功的 localStorage 快取 → 內建靜態快照
+    const useBackup = () => {
+      const cached = loadRatesCache();
+      if (cached) {
+        setRates(cached.rates);
+        setUpdated(cached.updated);
+        setStale('cache');
+      } else {
+        setRates(FALLBACK_RATES);
+        setUpdated(FALLBACK_RATES_DATE);
+        setStale('fallback');
+      }
+    };
     fetch(RATES_API)
       .then((r) => r.json())
       .then((data) => {
@@ -112,11 +134,12 @@ function CurrencyPanel() {
         if (data?.result === 'success' && data.rates) {
           setRates(data.rates as Rates);
           setUpdated(data.time_last_update_utc ?? null);
+          saveRatesCache(data.rates as Rates, data.time_last_update_utc ?? '');
         } else {
-          setError(true);
+          useBackup();
         }
       })
-      .catch(() => active && setError(true))
+      .catch(() => active && useBackup())
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, []);
@@ -129,7 +152,16 @@ function CurrencyPanel() {
   return (
     <div className="mx-auto max-w-lg">
       {loading && <p className="mb-4 text-sm text-muted">正在取得即時匯率…</p>}
-      {error && <p className="mb-4 text-sm text-red-500">無法取得匯率，請稍後再試。</p>}
+      {stale === 'cache' && (
+        <p className="mb-4 rounded-lg border border-amber-400 px-3 py-2 text-sm text-amber-600">
+          ⚠️ 目前離線——使用上次成功取得的匯率（{updated || '時間不明'}）。
+        </p>
+      )}
+      {stale === 'fallback' && (
+        <p className="mb-4 rounded-lg border border-amber-400 px-3 py-2 text-sm text-amber-600">
+          ⚠️ 無法取得即時匯率——使用內建備援匯率（{FALLBACK_RATES_DATE} 概略值，僅供參考）。
+        </p>
+      )}
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
         <div>

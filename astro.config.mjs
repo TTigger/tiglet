@@ -25,7 +25,29 @@ export default defineConfig({
           { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        runtimeCaching: [
+          {
+            // 匯率 API：正常走網路、失敗退快取（配合工具內的三層備援）
+            urlPattern: /^https:\/\/open\.er-api\.com\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'exchange-rates',
+              expiration: { maxEntries: 1, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            // Google Fonts：離線時退快取，避免字型跳動
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts',
+              expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+            },
+          },
+        ],
+      },
     }),
   ],
   vite: { plugins: [tailwindcss()] },
