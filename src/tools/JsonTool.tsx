@@ -3,6 +3,42 @@ import Tabs from '../components/Tabs';
 import CopyButton from '../components/CopyButton';
 import TreeView, { type TreeViewNode } from '../components/TreeView';
 import { parseJson, formatJson, minifyJson, buildJsonTree, type JsonTreeNode } from '../lib/jsonTree';
+import type { Locale } from '../lib/i18n';
+
+const L = {
+  zh: {
+    placeholder: '貼上 JSON，例如 {"a": [1, 2, 3]}',
+    ariaInput: 'JSON 輸入',
+    fillExample: '填入範例',
+    valid: '✓ 有效的 JSON',
+    invalid: (line: number | null, column: number | null) =>
+      `✗ 解析失敗${line !== null ? `（第 ${line} 行第 ${column} 欄附近）` : ''}`,
+    tabFormat: '格式化',
+    tabMinify: '壓縮',
+    tabTree: '樹狀圖',
+    minifyResult: (n: number) => `壓縮結果（${n} 字元）`,
+    formatResult: '格式化結果',
+    treeHint: '點任意節點複製它的 JSON path',
+    copied: (path: string) => `已複製 ${path} ✓`,
+    footnote: 'JSON 只在你的瀏覽器解析，不會上傳。',
+  },
+  en: {
+    placeholder: 'Paste JSON, e.g. {"a": [1, 2, 3]}',
+    ariaInput: 'JSON input',
+    fillExample: 'Fill example',
+    valid: '✓ Valid JSON',
+    invalid: (line: number | null, column: number | null) =>
+      `✗ Parse failed${line !== null ? ` (near line ${line}, column ${column})` : ''}`,
+    tabFormat: 'Format',
+    tabMinify: 'Minify',
+    tabTree: 'Tree view',
+    minifyResult: (n: number) => `Minified (${n} characters)`,
+    formatResult: 'Formatted result',
+    treeHint: 'Click any node to copy its JSON path',
+    copied: (path: string) => `Copied ${path} ✓`,
+    footnote: 'JSON is parsed entirely in your browser — never uploaded.',
+  },
+} as const;
 
 const areaClass =
   'w-full rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 font-mono text-sm text-ink outline-none focus:border-accent';
@@ -29,7 +65,8 @@ function toTreeViewNode(n: JsonTreeNode): TreeViewNode {
 
 const SAMPLE = '{\n  "name": "tiglet",\n  "tools": ["json", "diff"],\n  "meta": { "version": 2, "fun": true }\n}';
 
-export default function JsonTool() {
+export default function JsonTool({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [input, setInput] = useState('');
   const [tab, setTab] = useState('format');
   const [copiedPath, setCopiedPath] = useState('');
@@ -55,22 +92,20 @@ export default function JsonTool() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           rows={8}
-          placeholder='貼上 JSON，例如 {"a": [1, 2, 3]}'
+          placeholder={t.placeholder}
           className={areaClass}
-          aria-label="JSON 輸入"
+          aria-label={t.ariaInput}
         />
         {!input && (
           <button onClick={() => setInput(SAMPLE)} className="absolute right-3 top-3 text-xs text-muted hover:text-accent">
-            填入範例
+            {t.fillExample}
           </button>
         )}
       </div>
 
       {parsed && (
         <p className={`text-sm ${parsed.ok ? 'text-green-600' : 'text-red-500'}`}>
-          {parsed.ok
-            ? '✓ 有效的 JSON'
-            : `✗ 解析失敗${parsed.line !== null ? `（第 ${parsed.line} 行第 ${parsed.column} 欄附近）` : ''}`}
+          {parsed.ok ? t.valid : t.invalid(parsed.line, parsed.column)}
         </p>
       )}
 
@@ -79,9 +114,9 @@ export default function JsonTool() {
           <div className="flex justify-center">
             <Tabs
               tabs={[
-                { id: 'format', label: '格式化' },
-                { id: 'minify', label: '壓縮' },
-                { id: 'tree', label: '樹狀圖' },
+                { id: 'format', label: t.tabFormat },
+                { id: 'minify', label: t.tabMinify },
+                { id: 'tree', label: t.tabTree },
               ]}
               active={tab}
               onChange={setTab}
@@ -91,7 +126,7 @@ export default function JsonTool() {
           {tab !== 'tree' ? (
             <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
               <div className="flex items-center justify-between border-b border-edge px-4 py-2">
-                <span className="text-sm text-muted">{tab === 'minify' ? `壓縮結果（${output.length} 字元）` : '格式化結果'}</span>
+                <span className="text-sm text-muted">{tab === 'minify' ? t.minifyResult(output.length) : t.formatResult}</span>
                 <CopyButton value={output} />
               </div>
               <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap break-all px-4 py-3 font-mono text-sm text-ink">{output}</pre>
@@ -99,8 +134,8 @@ export default function JsonTool() {
           ) : (
             <div className="rounded-[var(--radius-card)] border border-edge bg-surface">
               <div className="flex items-center justify-between border-b border-edge px-4 py-2 text-sm">
-                <span className="text-muted">點任意節點複製它的 JSON path</span>
-                {copiedPath && <span className="font-mono text-xs text-accent">已複製 {copiedPath} ✓</span>}
+                <span className="text-muted">{t.treeHint}</span>
+                {copiedPath && <span className="font-mono text-xs text-accent">{t.copied(copiedPath)}</span>}
               </div>
               <div className="max-h-[28rem] overflow-y-auto px-2 py-1">
                 <TreeView nodes={[toTreeViewNode(tree!)]} onSelect={onSelectNode} />
@@ -110,7 +145,7 @@ export default function JsonTool() {
         </>
       )}
 
-      <p className="text-xs text-muted">JSON 只在你的瀏覽器解析，不會上傳。</p>
+      <p className="text-xs text-muted">{t.footnote}</p>
     </div>
   );
 }
