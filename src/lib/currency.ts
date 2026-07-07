@@ -21,6 +21,52 @@ export const CURRENCIES: CurrencyDef[] = [
   { code: 'CHF', label: '瑞士法郎 CHF' },
 ];
 
+/**
+ * 離線備援匯率（USD 基準的概略快照，2026-07 初）。
+ * 只在「拿不到即時匯率、localStorage 也沒有上次成功的快取」時使用，
+ * UI 必須明確標示這是備援值。
+ */
+export const FALLBACK_RATES_DATE = '2026-07-01';
+export const FALLBACK_RATES: Rates = {
+  USD: 1,
+  TWD: 32.5,
+  EUR: 0.92,
+  JPY: 155,
+  GBP: 0.78,
+  CNY: 7.25,
+  HKD: 7.8,
+  KRW: 1380,
+  AUD: 1.5,
+  CAD: 1.37,
+  SGD: 1.34,
+  CHF: 0.88,
+};
+
+const RATES_CACHE_KEY = 'tiglet:rates-cache';
+
+export interface CachedRates {
+  rates: Rates;
+  updated: string;
+}
+
+/** 把成功取得的匯率存進 localStorage，離線時當作第一層備援。 */
+export function saveRatesCache(rates: Rates, updated: string): void {
+  if (typeof window === 'undefined') return;
+  try { window.localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({ rates, updated })); } catch { /* ignore */ }
+}
+
+export function loadRatesCache(): CachedRates | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(RATES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedRates;
+    return parsed && typeof parsed.rates === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Convert an amount between two currencies using a shared-base rate table. */
 export function convertCurrency(amount: number, from: string, to: string, rates: Rates): number {
   const rf = rates[from];

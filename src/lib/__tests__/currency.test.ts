@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { convertCurrency, formatMoney } from '../currency';
+import { convertCurrency, formatMoney, CURRENCIES, FALLBACK_RATES, saveRatesCache, loadRatesCache } from '../currency';
 
 const rates = { USD: 1, TWD: 32, EUR: 0.92, JPY: 150 };
 
@@ -16,6 +16,25 @@ describe('convertCurrency', () => {
   });
   it('returns NaN for an unknown currency', () => {
     expect(Number.isNaN(convertCurrency(1, 'USD', 'XYZ', rates))).toBe(true);
+  });
+});
+
+describe('fallback rates (離線備援)', () => {
+  it('covers every listed currency and converts sanely', () => {
+    for (const c of CURRENCIES) {
+      expect(FALLBACK_RATES[c.code], c.code).toBeGreaterThan(0);
+    }
+    // 100 USD → TWD 應落在合理區間
+    const twd = convertCurrency(100, 'USD', 'TWD', FALLBACK_RATES);
+    expect(twd).toBeGreaterThan(2500);
+    expect(twd).toBeLessThan(4000);
+  });
+
+  it('rates cache round-trips via localStorage', () => {
+    saveRatesCache({ USD: 1, TWD: 33 }, 'test-date');
+    const cached = loadRatesCache();
+    expect(cached?.rates.TWD).toBe(33);
+    expect(cached?.updated).toBe('test-date');
   });
 });
 
