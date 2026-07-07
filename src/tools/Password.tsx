@@ -1,18 +1,34 @@
 import { useState } from 'react';
 import { generatePassword, estimateStrength, strengthScore, type PasswordOptions } from '../lib/password';
 import CopyButton from '../components/CopyButton';
+import { useUrlState } from '../lib/urlState';
 
 const STRENGTH_LABEL = { weak: '弱', medium: '中', strong: '強' } as const;
 const STRENGTH_COLOR = { weak: 'text-red-500', medium: 'text-amber-500', strong: 'text-green-600' } as const;
 const STRENGTH_BAR = { weak: 'bg-red-500', medium: 'bg-amber-500', strong: 'bg-green-600' } as const;
 
 export default function Password() {
-  const [opts, setOpts] = useState<PasswordOptions>({ length: 16, upper: true, lower: true, digits: true, symbols: false });
+  // 產生規則活在網址（len=16&set=uld）——密碼本身永遠不進網址
+  const [lenStr, setLenStr] = useUrlState('len', '16');
+  const [setStr, setSetStr] = useUrlState('set', 'uld');
   const [result, setResult] = useState<{ pw: string; opts: PasswordOptions } | null>(null);
+
+  const length = Math.min(64, Math.max(6, Number(lenStr) || 16));
+  const opts: PasswordOptions = {
+    length,
+    upper: setStr.includes('u'),
+    lower: setStr.includes('l'),
+    digits: setStr.includes('d'),
+    symbols: setStr.includes('s'),
+  };
 
   function generate() { setResult({ pw: generatePassword(opts), opts }); }
   type BoolKey = 'upper' | 'lower' | 'digits' | 'symbols';
-  function toggle(key: BoolKey) { setOpts((o) => ({ ...o, [key]: !o[key] })); }
+  const CODE: Record<BoolKey, string> = { upper: 'u', lower: 'l', digits: 'd', symbols: 's' };
+  function toggle(key: BoolKey) {
+    const c = CODE[key];
+    setSetStr(opts[key] ? setStr.replace(c, '') : setStr + c);
+  }
 
   const password = result?.pw ?? '';
   const strength = estimateStrength(opts);
@@ -38,7 +54,7 @@ export default function Password() {
           <span>長度：{opts.length}</span>
           <span className={STRENGTH_COLOR[strength]}>強度：{STRENGTH_LABEL[strength]}</span>
         </label>
-        <input type="range" min={6} max={64} value={opts.length} onChange={(e) => setOpts((o) => ({ ...o, length: Number(e.target.value) }))} className="mt-2 w-full accent-[var(--color-accent)]" />
+        <input type="range" min={6} max={64} value={opts.length} onChange={(e) => setLenStr(e.target.value)} aria-label="密碼長度" className="mt-2 w-full accent-[var(--color-accent)]" />
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-edge">
           <div
             className={`h-full rounded-full transition-all duration-500 ease-out ${STRENGTH_BAR[strength]}`}

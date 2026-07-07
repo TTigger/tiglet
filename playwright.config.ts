@@ -7,6 +7,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // 本機多個 Chromium 平行實例會耗盡資源（renderer 崩潰連鎖），保守上限 2
+  workers: process.env.CI ? undefined : 2,
   // CI 需要 html reporter 才有 playwright-report/ 可以在失敗時上傳
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {

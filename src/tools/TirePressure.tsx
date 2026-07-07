@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { recommendPressure, WEIGHT_SPLITS, SURFACES, type Surface } from '../lib/tirePressure';
+import ShareLinkButton from '../components/ShareLinkButton';
 
-// 體重屬個人資料，刻意不寫入網址。
+// 體重屬個人資料，不隨打字寫入網址；分享靠底部按鈕主動產生連結。
+const initParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+const isSurface = (s: string | null): s is Surface => s === 'smooth' || s === 'rough' || s === 'gravel';
 
 const inputClass =
   'w-full rounded-lg border border-edge bg-surface px-3 py-2.5 font-mono tabular-nums text-ink outline-none transition-colors focus:border-accent';
@@ -34,12 +37,15 @@ function WheelCard({ title, psi, bar }: { title: string; psi: number; bar: numbe
 }
 
 export default function TirePressure() {
-  const [riderStr, setRiderStr] = useState('70');
-  const [bikeStr, setBikeStr] = useState('9');
-  const [width, setWidth] = useState(28);
-  const [tubeless, setTubeless] = useState(false);
-  const [surface, setSurface] = useState<Surface>('smooth');
-  const [splitIdx, setSplitIdx] = useState(1);
+  const [riderStr, setRiderStr] = useState(initParams.get('rider') ?? '70');
+  const [bikeStr, setBikeStr] = useState(initParams.get('bike') ?? '9');
+  const [width, setWidth] = useState(Number(initParams.get('tw')) || 28);
+  const [tubeless, setTubeless] = useState(initParams.get('tl') === '1');
+  const [surface, setSurface] = useState<Surface>(isSurface(initParams.get('sf')) ? (initParams.get('sf') as Surface) : 'smooth');
+  const [splitIdx, setSplitIdx] = useState(() => {
+    const i = Number(initParams.get('sp'));
+    return Number.isInteger(i) && i >= 0 && i < WEIGHT_SPLITS.length ? i : 1;
+  });
 
   const total = num(riderStr) + num(bikeStr);
   const valid = Number.isFinite(total) && total >= 40 && total <= 200;
@@ -97,6 +103,11 @@ export default function TirePressure() {
           ⚠️ 建議值超過 72.5 psi（5 bar）——多數無勾框（hookless）輪組的上限。若你的輪組是 hookless，請以輪組原廠上限為準。
         </p>
       )}
+
+      <div className="flex items-center gap-3">
+        <ShareLinkButton params={{ rider: riderStr, bike: bikeStr, tw: width, tl: tubeless, sf: surface, sp: splitIdx }} />
+        <span className="text-xs text-muted">數值只在你按下按鈕時才組進連結。</span>
+      </div>
 
       <p className="text-xs text-muted">
         以主流計算器公開參考值校準的簡化模型，做為起點後依路感微調 ±5 psi。

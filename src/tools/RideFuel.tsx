@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import Tabs from '../components/Tabs';
 import { kjToKcal, kjFromPower, foodEquivalents, carbsPerHour, sweatRate, DEFAULT_EFFICIENCY } from '../lib/energy';
+import ShareLinkButton from '../components/ShareLinkButton';
 
-// 體重等輸入屬個人資料，刻意不寫入網址。
+// 體重等輸入屬個人資料，不隨打字寫入網址；熱量分頁可用按鈕主動產生分享連結
+//（水分分頁含前後體重，完全不提供分享）。
+const initParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 
 const inputClass =
   'w-full rounded-lg border border-edge bg-surface px-3 py-2.5 font-mono tabular-nums text-ink outline-none transition-colors focus:border-accent';
@@ -22,11 +25,14 @@ function Field({ label, value, onChange, suffix, placeholder }: { label: string;
 }
 
 function EnergyPanel() {
-  const [mode, setMode] = useState<'kj' | 'power'>('kj');
-  const [kjStr, setKjStr] = useState('1000');
-  const [wattsStr, setWattsStr] = useState('180');
-  const [hoursStr, setHoursStr] = useState('2');
-  const [effPct, setEffPct] = useState(DEFAULT_EFFICIENCY * 100);
+  const [mode, setMode] = useState<'kj' | 'power'>(initParams.get('m') === 'power' ? 'power' : 'kj');
+  const [kjStr, setKjStr] = useState(initParams.get('kj') ?? '1000');
+  const [wattsStr, setWattsStr] = useState(initParams.get('w') ?? '180');
+  const [hoursStr, setHoursStr] = useState(initParams.get('h') ?? '2');
+  const [effPct, setEffPct] = useState(() => {
+    const e = Number(initParams.get('eff'));
+    return e >= 20 && e <= 25 ? e : DEFAULT_EFFICIENCY * 100;
+  });
 
   const hours = num(hoursStr);
   const kj = mode === 'kj' ? num(kjStr) : kjFromPower(num(wattsStr), hours * 3600);
@@ -110,6 +116,11 @@ function EnergyPanel() {
           </span>
         </div>
       )}
+
+      <div className="flex items-center gap-3">
+        <ShareLinkButton params={mode === 'kj' ? { kj: kjStr, h: hoursStr, eff: effPct } : { m: 'power', w: wattsStr, h: hoursStr, eff: effPct }} />
+        <span className="text-xs text-muted">數值只在你按下按鈕時才組進連結。</span>
+      </div>
     </div>
   );
 }
