@@ -1,12 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { newGame, step, isOpposite, type SnakeState, type Direction } from '../lib/snake';
 import { getNumber, setNumber } from '../lib/storage';
+import { type Locale } from '../lib/i18n';
 
 const SIZE = 15;
 const TICK_MS = 130;
 const BEST_KEY = 'tiglet:snake-best';
 
-export default function Snake() {
+const L = {
+  zh: {
+    score: '分數',
+    best: '最佳',
+    pause: '暫停',
+    start: '開始',
+    restart: '重新開始',
+    gameOver: '遊戲結束',
+    playAgain: '再玩一次',
+    hint: '方向鍵或 WASD 控制，空白鍵暫停',
+  },
+  en: {
+    score: 'Score',
+    best: 'Best',
+    pause: 'Pause',
+    start: 'Start',
+    restart: 'Restart',
+    gameOver: 'Game over',
+    playAgain: 'Play again',
+    hint: 'Steer with the arrow keys or WASD; Space to pause',
+  },
+} as const;
+
+export default function Snake({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [state, setState] = useState<SnakeState>(() => newGame(SIZE));
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(0);
@@ -79,21 +104,21 @@ export default function Snake() {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex gap-2">
           <div className="rounded-lg border border-edge bg-surface px-4 py-2 text-center">
-            <div className="text-xs text-muted">分數</div>
+            <div className="text-xs text-muted">{t.score}</div>
             <div className="font-mono text-lg tabular-nums text-ink">{state.score}</div>
           </div>
           <div className="rounded-lg border border-edge bg-surface px-4 py-2 text-center">
-            <div className="text-xs text-muted">最佳</div>
+            <div className="text-xs text-muted">{t.best}</div>
             <div className="font-mono text-lg tabular-nums text-ink">{best}</div>
           </div>
         </div>
         {state.alive ? (
           <button onClick={() => setRunning((r) => !r)} className="rounded-lg bg-accent px-4 py-2.5 text-sm text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-            {running ? '暫停' : '開始'}
+            {running ? t.pause : t.start}
           </button>
         ) : (
           <button onClick={restart} className="rounded-lg bg-accent px-4 py-2.5 text-sm text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-            重新開始
+            {t.restart}
           </button>
         )}
       </div>
@@ -117,9 +142,9 @@ export default function Snake() {
 
         {!state.alive && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] bg-bg/80 backdrop-blur-sm">
-            <p className="font-serif text-2xl text-ink">遊戲結束</p>
+            <p className="font-serif text-2xl text-ink">{t.gameOver}</p>
             <button onClick={restart} className="rounded-lg bg-accent px-5 py-2.5 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-              再玩一次
+              {t.playAgain}
             </button>
           </div>
         )}
@@ -135,7 +160,7 @@ export default function Snake() {
         <button onClick={() => queueTurn('right')} className="rounded-lg border border-edge bg-surface py-3 text-ink active:bg-accent active:text-white">→</button>
       </div>
 
-      <p className="mt-4 hidden text-center text-sm text-muted sm:block">方向鍵或 WASD 控制，空白鍵暫停</p>
+      <p className="mt-4 hidden text-center text-sm text-muted sm:block">{t.hint}</p>
     </div>
   );
 }

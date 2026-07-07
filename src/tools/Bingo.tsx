@@ -1,10 +1,44 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { generateCard, drawBall, ballLabel, evaluate, FREE } from '../lib/bingo';
+import { type Locale } from '../lib/i18n';
 
 const LETTERS = ['B', 'I', 'N', 'G', 'O'];
 const ROLL_MS = 1100;
 
-export default function Bingo() {
+const L = {
+  zh: {
+    rolling: '抽號中…',
+    exhausted: '號碼已抽完',
+    call: '叫號',
+    calledCount: (n: number) => `已叫 ${n} / 75 號`,
+    bingo: '🎉 BINGO！',
+    // 樣式標籤直接沿用 lib 產出的中文（例：「2 線」「四角」「全滿」）
+    pattern: (p: string) => p,
+    patternSep: '、',
+    newGame: '新的一局',
+    calledList: '已叫號碼',
+  },
+  en: {
+    rolling: 'Drawing…',
+    exhausted: 'All numbers drawn',
+    call: 'Call a number',
+    calledCount: (n: number) => `Called ${n} / 75`,
+    bingo: '🎉 BINGO!',
+    pattern: (p: string) => {
+      if (p === '四角') return 'Four corners';
+      if (p === '全滿') return 'Blackout';
+      const m = p.match(/^(\d+) 線$/);
+      if (m) return Number(m[1]) === 1 ? '1 line' : `${m[1]} lines`;
+      return p;
+    },
+    patternSep: ', ',
+    newGame: 'New game',
+    calledList: 'Called numbers',
+  },
+} as const;
+
+export default function Bingo({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [card, setCard] = useState(() => generateCard());
   const [called, setCalled] = useState<number[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
@@ -75,9 +109,9 @@ export default function Bingo() {
           )}
         </div>
         <button onClick={call} disabled={rolling || remaining === 0} className="mt-4 w-full rounded-lg bg-accent py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50">
-          {rolling ? '抽號中…' : remaining === 0 ? '號碼已抽完' : '叫號'}
+          {rolling ? t.rolling : remaining === 0 ? t.exhausted : t.call}
         </button>
-        <p className="mt-2 text-xs text-muted">已叫 {called.length} / 75 號</p>
+        <p className="mt-2 text-xs text-muted">{t.calledCount(called.length)}</p>
       </div>
 
       {/* 我的卡片 */}
@@ -110,17 +144,17 @@ export default function Bingo() {
 
       {result.bingo && (
         <p key={result.patterns.join()} className="die-pop mt-6 text-center font-serif text-3xl text-accent">
-          🎉 BINGO！<span className="block text-base text-muted">{result.patterns.join('、')}</span>
+          {t.bingo}<span className="block text-base text-muted">{result.patterns.map(t.pattern).join(t.patternSep)}</span>
         </p>
       )}
 
       <button onClick={newGame} className="mt-6 w-full rounded-lg border border-edge bg-surface py-2 text-sm text-accent hover:bg-accent hover:text-white">
-        新的一局
+        {t.newGame}
       </button>
 
       {called.length > 0 && (
         <div className="mt-6">
-          <h2 className="mb-2 text-xs uppercase tracking-wide text-muted">已叫號碼</h2>
+          <h2 className="mb-2 text-xs uppercase tracking-wide text-muted">{t.calledList}</h2>
           <div className="flex flex-wrap gap-1.5">
             {called.map((n) => (
               <span key={n} className={`rounded px-2 py-0.5 text-sm ${n === current ? 'bg-accent text-white' : 'bg-surface text-muted'} border border-edge`}>

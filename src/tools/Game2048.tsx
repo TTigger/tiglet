@@ -1,8 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 import { newGame, move, addRandomTile, hasWon, canMove, type Board, type Direction } from '../lib/game2048';
 import { getNumber, setNumber } from '../lib/storage';
+import { type Locale } from '../lib/i18n';
 
 const BEST_KEY = 'tiglet:2048-best';
+
+const L = {
+  zh: {
+    score: '分數',
+    best: '最佳',
+    newGame: '新遊戲',
+    win: '🎉 達成 2048！',
+    gameOver: '遊戲結束',
+    keepGoing: '繼續挑戰',
+    playAgain: '再玩一次',
+    hint: '用方向鍵、WASD 或滑動來移動方塊',
+  },
+  en: {
+    score: 'Score',
+    best: 'Best',
+    newGame: 'New game',
+    win: '🎉 You made 2048!',
+    gameOver: 'Game over',
+    keepGoing: 'Keep going',
+    playAgain: 'Play again',
+    hint: 'Move tiles with the arrow keys, WASD, or swipe',
+  },
+} as const;
 
 const TILE_STYLE: Record<number, string> = {
   0: 'bg-edge/40 text-transparent',
@@ -19,7 +43,8 @@ const TILE_STYLE: Record<number, string> = {
   2048: 'bg-[#edc22e] text-white',
 };
 
-export default function Game2048() {
+export default function Game2048({ locale = 'zh' }: { locale?: Locale }) {
+  const t = L[locale];
   const [board, setBoard] = useState<Board>(() => newGame());
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
@@ -91,16 +116,16 @@ export default function Game2048() {
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex gap-2">
           <div className="rounded-lg bg-surface border border-edge px-4 py-2 text-center">
-            <div className="text-xs text-muted">分數</div>
+            <div className="text-xs text-muted">{t.score}</div>
             <div className="font-mono text-lg tabular-nums text-ink">{score}</div>
           </div>
           <div className="rounded-lg bg-surface border border-edge px-4 py-2 text-center">
-            <div className="text-xs text-muted">最佳</div>
+            <div className="text-xs text-muted">{t.best}</div>
             <div className="font-mono text-lg tabular-nums text-ink">{best}</div>
           </div>
         </div>
         <button onClick={restart} className="rounded-lg bg-accent px-4 py-2.5 text-sm text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-          新遊戲
+          {t.newGame}
         </button>
       </div>
 
@@ -124,22 +149,22 @@ export default function Game2048() {
 
         {(over || showWin) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-[var(--radius-card)] bg-bg/80 backdrop-blur-sm">
-            <p className="font-serif text-2xl text-ink">{showWin ? '🎉 達成 2048！' : '遊戲結束'}</p>
+            <p className="font-serif text-2xl text-ink">{showWin ? t.win : t.gameOver}</p>
             <div className="flex gap-2">
               {showWin && (
                 <button onClick={() => setKeepGoing(true)} className="rounded-lg border border-edge bg-surface px-5 py-2.5 text-ink transition-colors hover:border-accent">
-                  繼續挑戰
+                  {t.keepGoing}
                 </button>
               )}
               <button onClick={restart} className="rounded-lg bg-accent px-5 py-2.5 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-                再玩一次
+                {t.playAgain}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      <p className="mt-4 text-center text-sm text-muted">用方向鍵、WASD 或滑動來移動方塊</p>
+      <p className="mt-4 text-center text-sm text-muted">{t.hint}</p>
     </div>
   );
 }
