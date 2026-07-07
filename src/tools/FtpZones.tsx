@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { powerZones, sweetSpot, wPerKg, wkgLevel, hrZonesFromLthr, hrZonesFromMax, type HrZone } from '../lib/ftp';
+import ShareLinkButton from '../components/ShareLinkButton';
 
-// 個人訓練數據，刻意不寫入網址。
+// 個人訓練數據不隨打字寫入網址；分享靠底部按鈕主動產生連結，
+// 開啟帶參數的連結時會自動帶入數值。
+const initParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
 
 const inputClass =
   'w-full rounded-lg border border-edge bg-surface px-3 py-2.5 font-mono tabular-nums text-ink outline-none transition-colors focus:border-accent';
@@ -54,10 +57,10 @@ function HrTable({ zones }: { zones: HrZone[] }) {
 }
 
 export default function FtpZones() {
-  const [ftpStr, setFtpStr] = useState('200');
-  const [weightStr, setWeightStr] = useState('');
-  const [lthrStr, setLthrStr] = useState('');
-  const [maxHrStr, setMaxHrStr] = useState('');
+  const [ftpStr, setFtpStr] = useState(initParams.get('ftp') ?? '200');
+  const [weightStr, setWeightStr] = useState(initParams.get('w') ?? '');
+  const [lthrStr, setLthrStr] = useState(initParams.get('lthr') ?? '');
+  const [maxHrStr, setMaxHrStr] = useState(initParams.get('mhr') ?? '');
 
   const ftp = num(ftpStr);
   const ftpValid = Number.isFinite(ftp) && ftp > 0;
@@ -139,6 +142,11 @@ export default function FtpZones() {
         ) : (
           <p className="text-sm text-muted">輸入 LTHR 或最大心率即可產生心率五區。</p>
         )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <ShareLinkButton params={{ ftp: ftpStr, w: weightStr, lthr: lthrStr, mhr: maxHrStr }} />
+        <span className="text-xs text-muted">數值只在你按下按鈕時才組進連結。</span>
       </div>
 
       <p className="text-xs text-muted">

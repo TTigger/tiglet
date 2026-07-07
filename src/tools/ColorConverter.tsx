@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   parseColor,
   rgbToHex,
@@ -9,18 +9,34 @@ import {
   type RGB,
 } from '../lib/color';
 import CopyButton from '../components/CopyButton';
+import { useUrlState } from '../lib/urlState';
 
 const DEFAULT: RGB = { r: 217, g: 119, b: 87 }; // Tiglet accent
 
 export default function ColorConverter() {
   const [text, setText] = useState('#D97757');
   const [rgb, setRgb] = useState<RGB>(DEFAULT);
+  // 色碼放網址（去掉 # 的 HEX），複製本頁網址即可分享顏色
+  const [shared, setShared] = useUrlState('c', '');
   const valid = parseColor(text) !== null;
+
+  useEffect(() => {
+    if (!shared) return;
+    const parsed = parseColor(shared.startsWith('#') ? shared : `#${shared}`);
+    if (parsed && rgbToHex(parsed) !== rgbToHex(rgb)) {
+      setRgb(parsed);
+      setText(rgbToHex(parsed));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared]);
 
   function commitText(value: string) {
     setText(value);
     const parsed = parseColor(value);
-    if (parsed) setRgb(parsed);
+    if (parsed) {
+      setRgb(parsed);
+      setShared(rgbToHex(parsed).slice(1));
+    }
   }
 
   function commitPicker(hex: string) {
@@ -28,6 +44,7 @@ export default function ColorConverter() {
     if (parsed) {
       setRgb(parsed);
       setText(hex);
+      setShared(hex.slice(1));
     }
   }
 
@@ -79,6 +96,7 @@ export default function ColorConverter() {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-xs text-muted">複製本頁網址即可分享這個顏色。</p>
     </div>
   );
 }
