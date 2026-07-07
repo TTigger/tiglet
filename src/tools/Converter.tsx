@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Tabs from '../components/Tabs';
+import CopyButton from '../components/CopyButton';
 import { useUrlState } from '../lib/urlState';
 import { CATEGORIES, TEMPERATURE, convert, formatNumber, type UnitCategory, type UnitDef } from '../lib/units';
 import { CURRENCIES, convertCurrency, formatMoney, type Rates } from '../lib/currency';
@@ -73,7 +74,10 @@ function UnitPanel() {
 
         <div>
           <label className="mb-1 block text-xs text-muted">到</label>
-          <div className={`${inputClass} flex items-center overflow-hidden`}>{formatNumber(result)}</div>
+          <div className={`${inputClass} flex items-center justify-between gap-2 overflow-hidden`}>
+            <span className="truncate">{formatNumber(result)}</span>
+            {Number.isFinite(result) && <CopyButton value={formatNumber(result)} />}
+          </div>
           <select value={to} onChange={(e) => setTo(e.target.value)} aria-label="目標單位" className={`${selectClass} mt-2`}>
             {cat.units.map((u) => <option key={u.id} value={u.id}>{u.label}</option>)}
           </select>
@@ -146,7 +150,10 @@ function CurrencyPanel() {
 
         <div>
           <label className="mb-1 block text-xs text-muted">換算結果</label>
-          <div className={`${inputClass} flex items-center overflow-hidden`}>{formatMoney(result)}</div>
+          <div className={`${inputClass} flex items-center justify-between gap-2 overflow-hidden`}>
+            <span className="truncate">{formatMoney(result)}</span>
+            {Number.isFinite(result) && <CopyButton value={formatMoney(result)} />}
+          </div>
           <select value={to} onChange={(e) => setTo(e.target.value)} aria-label="目標幣別" className={`${selectClass} mt-2`}>
             {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
           </select>
