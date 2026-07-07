@@ -23,6 +23,19 @@ test('語言切換：中 ⇄ 英保留所在頁面', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '計時器' })).toBeVisible();
 });
 
+test('英文工具頁的島嶼內容為英文（批次 1：計算）', async ({ page }) => {
+  await page.goto('/en/tools/date-calc');
+  await waitForIslands(page);
+
+  await expect(page.getByRole('button', { name: 'Countdown' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Workdays' })).toBeVisible();
+
+  // SSR 也要是英文（無 hydration 語言閃換）
+  const html = await (await page.request.get('/en/tools/date-calc')).text();
+  expect(html).toContain('Countdown');
+  expect(html).not.toContain('倒數日');
+});
+
 test('英文頁的命令面板顯示英文並導向 /en/ 路徑', async ({ page }) => {
   await page.goto('/en/');
   await waitForIslands(page);
