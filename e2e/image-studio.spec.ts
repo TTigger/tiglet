@@ -16,4 +16,9 @@ test('上傳圖片 → 前後對比與下載', async ({ page }) => {
   await page.getByRole('link', { name: '下載' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.(jpe?g|png|webp)$/);
+
+  // 清除資訊分頁：canvas 產出的 PNG 不帶 EXIF → 顯示未偵測，且仍有乾淨輸出可下載
+  await page.getByRole('button', { name: '清除資訊' }).click();
+  await expect(page.getByText(/未偵測到 EXIF/)).toBeVisible();
+  await expect(page.getByRole('link', { name: '下載' })).toBeVisible();
 });
