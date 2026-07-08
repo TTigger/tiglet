@@ -211,6 +211,41 @@ test('裁切與反轉：2–10km 區段 → 反轉變下坡 → 回復完整路�
   await expect(page.getByText('1 段', { exact: true })).toBeVisible();
 });
 
+test('疊圖比較與匯出尺寸：藍線＋標籤上圖、4× PNG 實際寬 3360', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  await page.locator('input[type="file"]').first().setInputFiles({
+    name: 'ride.gpx',
+    mimeType: 'application/gpx+xml',
+    buffer: Buffer.from(syntheticGpx(), 'utf-8'),
+  });
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+
+  // 疊加第二條路線（同型但整體高 100m）→ 標題畫進圖；移除後消失
+  const compareGpx = syntheticGpx().replace(/<name>測試爬坡<\/name>/, '<name>比較用路線</name>').replace(/<ele>(\d+(?:\.\d+)?)<\/ele>/g, (_, e) => `<ele>${Number(e) + 100}</ele>`);
+  await page.getByLabel('上傳比較路線').setInputFiles({
+    name: 'compare.gpx',
+    mimeType: 'application/gpx+xml',
+    buffer: Buffer.from(compareGpx, 'utf-8'),
+  });
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText('比較用路線');
+  await expect(page.getByText(/對比中：比較用路線/)).toBeVisible();
+  await page.getByLabel('移除比較路線').click();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText('比較用路線');
+
+  // 匯出尺寸 4× → 下載的 PNG 標頭寬度必須是 3360（IHDR 第 16–19 位元組）
+  await page.getByLabel('匯出尺寸').selectOption('4');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '下載 PNG 圖片' }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  const { readFileSync } = await import('node:fs');
+  const buf = readFileSync(path!);
+  expect(buf.readUInt32BE(16)).toBe(3360);
+  expect(buf.readUInt32BE(20)).toBe(1520);
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
