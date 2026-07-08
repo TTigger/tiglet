@@ -155,6 +155,22 @@ test('手動建路線：檢查點直接出圖', async ({ page }) => {
   await expect(page.getByText('2 級', { exact: true })).toBeVisible();
 });
 
+test('分享連結：開啟 ?r= 即重建剖面圖（標題＋地標）', async ({ page }) => {
+  // v1 格式：title|km,ele;…|km,name;…（與 lib/routeShare.ts 對齊）
+  const r = ['1', encodeURIComponent('分享測試坡'), '0,100;2,100;10,500;12,500', `6,${encodeURIComponent('中途補給')}`].join('|');
+  await page.goto(`/tools/stage-profile?r=${encodeURIComponent(r)}`);
+  await waitForIslands(page);
+
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+  await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue('分享測試坡');
+  await expect(page.getByLabel('地標 1 名稱')).toHaveValue('中途補給');
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/中途補給 \d+m/);
+  // 8km@5% → 二級坡照樣被偵測
+  await expect(page.getByText('2 級', { exact: true })).toBeVisible();
+  // 出圖後有分享按鈕
+  await expect(page.getByRole('button', { name: /複製分享連結/ })).toBeVisible();
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
