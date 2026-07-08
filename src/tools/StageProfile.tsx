@@ -115,6 +115,12 @@ const L = {
     size4x: '超大 3360×1520',
     sizeStory: 'IG 限動 1080×1920',
     transparentLabel: '透明背景',
+    previewBtn: '預覽圖片',
+    previewHint: '長按圖片即可儲存到照片',
+    previewClose: '關閉',
+    shareImageBtn: '分享圖片',
+    copyImageBtn: '複製圖片',
+    copiedImage: '已複製 ✓',
     steepestOnChart: (pct: string) => `最陡 1km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: '賽段剖面圖',
@@ -240,6 +246,12 @@ const L = {
     size4x: 'XL 3360×1520',
     sizeStory: 'IG story 1080×1920',
     transparentLabel: 'Transparent background',
+    previewBtn: 'Preview image',
+    previewHint: 'Long-press the image to save it to Photos',
+    previewClose: 'Close',
+    shareImageBtn: 'Share image',
+    copyImageBtn: 'Copy image',
+    copiedImage: 'Copied ✓',
     steepestOnChart: (pct: string) => `Steepest km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: 'Stage profile chart',
@@ -338,48 +350,61 @@ interface ExportOpts {
   transparent?: boolean; // 去背：略過畫布底色並移除 SVG 內的背景矩形
 }
 
-function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string, bg: string, opts: ExportOpts = {}) {
-  let source = svg;
-  if (opts.transparent) {
-    source = svg.cloneNode(true) as SVGSVGElement;
-    source.querySelector('[data-bg]')?.remove();
+// 核心渲染：SVG → PNG Blob。下載／預覽／分享／複製共用同一顆輸出
+function renderSvgToPng(svg: SVGSVGElement, width: number, height: number, bg: string, opts: ExportOpts = {}): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    let source = svg;
+    if (opts.transparent) {
+      source = svg.cloneNode(true) as SVGSVGElement;
+      source.querySelector('[data-bg]')?.remove();
+    }
+    const xml = new XMLSerializer().serializeToString(source);
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('render failed'));
+    };
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      if (opts.story) {
+        canvas.width = 1080;
+        canvas.height = 1920;
+      } else {
+        const scale = opts.scale ?? 2;
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+      }
+      const ctx = canvas.getContext('2d')!;
+      if (!opts.transparent) {
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      if (opts.story) {
+        const dh = (height * 1080) / width;
+        ctx.drawImage(img, 0, (1920 - dh) / 2, 1080, dh);
+      } else {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+      URL.revokeObjectURL(url);
+      canvas.toBlob((png) => (png ? resolve(png) : reject(new Error('toBlob failed'))), 'image/png');
+    };
+    img.src = url;
+  });
+}
+
+async function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string, bg: string, opts: ExportOpts = {}) {
+  try {
+    const png = await renderSvgToPng(svg, width, height, bg, opts);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(png);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {
+    /* 渲染失敗：靜默略過，不中斷頁面 */
   }
-  const xml = new XMLSerializer().serializeToString(source);
-  const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    if (opts.story) {
-      canvas.width = 1080;
-      canvas.height = 1920;
-    } else {
-      const scale = opts.scale ?? 2;
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-    }
-    const ctx = canvas.getContext('2d')!;
-    if (!opts.transparent) {
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    if (opts.story) {
-      const dh = (height * 1080) / width;
-      ctx.drawImage(img, 0, (1920 - dh) / 2, 1080, dh);
-    } else {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    }
-    URL.revokeObjectURL(url);
-    canvas.toBlob((png) => {
-      if (!png) return;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(png);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }, 'image/png');
-  };
-  img.src = url;
 }
 
 function tickStepKm(totalKm: number): number {
@@ -784,6 +809,33 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [compare, setCompare] = useState<{ profile: Profile; title: string } | null>(null);
   const [exportSize, setExportSize] = useState<'1' | '2' | '4' | 'story'>('2');
   const [transparent, setTransparent] = useState(false);
+  // 依裝置能力決定匯出按鈕組合（掛載後偵測，避免 SSR 分歧）
+  const [isTouch, setIsTouch] = useState(false);
+  const [canShareFiles, setCanShareFiles] = useState(false);
+  const [canCopyImage, setCanCopyImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [copiedImage, setCopiedImage] = useState(false);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+    try {
+      setCanShareFiles(!!navigator.canShare?.({ files: [new File([''], 'x.png', { type: 'image/png' })] }));
+    } catch {
+      setCanShareFiles(false);
+    }
+    setCanCopyImage('clipboard' in navigator && 'ClipboardItem' in window);
+  }, []);
+
+  // 預覽燈箱開著時支援 Esc 關閉
+  useEffect(() => {
+    if (!previewUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePreview();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl]);
 
   // 分享連結還原：?r= 帶簡化輪廓 → 零檔案重建剖面圖
   useEffect(() => {
@@ -981,11 +1033,62 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     applyTrack(points, [{ km: '10.0', name: t.sampleWaypoint }], t.sampleTitle);
   }
 
-  function downloadPng() {
-    if (!svgRef.current) return;
+  function exportOpts(): ExportOpts {
     const opts: ExportOpts = exportSize === 'story' ? { story: true } : { scale: Number(exportSize) };
     opts.transparent = transparent;
-    downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg, opts);
+    return opts;
+  }
+
+  function downloadPng() {
+    if (!svgRef.current) return;
+    downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg, exportOpts());
+  }
+
+  async function renderCurrentPng(): Promise<Blob | null> {
+    if (!svgRef.current) return null;
+    try {
+      return await renderSvgToPng(svgRef.current, W, H, theme.bg, exportOpts());
+    } catch {
+      return null;
+    }
+  }
+
+  // 手機路徑 ①：預覽燈箱 → 系統原生「長按 → 儲存影像」直接進照片
+  async function openPreview() {
+    const png = await renderCurrentPng();
+    if (png) setPreviewUrl(URL.createObjectURL(png));
+  }
+
+  function closePreview() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
+
+  // 手機路徑 ②：原生分享面板（AirDrop／LINE／IG…）
+  async function shareImage() {
+    const png = await renderCurrentPng();
+    if (!png) return;
+    const file = new File([png], `${title.trim() || 'stage-profile'}.png`, { type: 'image/png' });
+    try {
+      await navigator.share({ files: [file], title: title.trim() || undefined });
+    } catch {
+      /* 使用者取消分享 */
+    }
+  }
+
+  // 桌機輔助：PNG 進剪貼簿，貼進聊天室或文件
+  async function copyImage() {
+    const png = await renderCurrentPng();
+    if (!png) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]);
+      setCopiedImage(true);
+      setTimeout(() => setCopiedImage(false), 2000);
+    } catch {
+      /* 剪貼簿權限被拒：不中斷 */
+    }
   }
 
   const steepestSpot = useMemo(
@@ -1353,6 +1456,21 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
               <option value="story">{t.sizeStory}</option>
             </select>
             <Toggle label={t.transparentLabel} checked={transparent} onChange={setTransparent} />
+            {isTouch && (
+              <button onClick={openPreview} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+                {t.previewBtn}
+              </button>
+            )}
+            {canShareFiles && (
+              <button onClick={shareImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+                {t.shareImageBtn}
+              </button>
+            )}
+            {!isTouch && canCopyImage && (
+              <button onClick={copyImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+                {copiedImage ? t.copiedImage : t.copyImageBtn}
+              </button>
+            )}
             <ShareLinkButton label={t.shareLabel} params={{ r: shareCode }} />
             <div className="flex flex-wrap gap-2 text-xs text-muted">
               {buckets.map((b) => (
@@ -1366,6 +1484,31 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
           <p className="text-xs text-muted">{t.shareHint}</p>
           <p className="text-xs text-muted">{t.footnote}</p>
         </>
+      )}
+
+      {/* 預覽燈箱：顯示渲染後的 PNG，交給系統的「長按 → 儲存影像」進照片圖庫 */}
+      {previewUrl && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.previewBtn}
+          onClick={closePreview}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/75 p-4"
+        >
+          <img
+            src={previewUrl}
+            alt={t.svgAria}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[80vh] max-w-full rounded-lg shadow-2xl"
+          />
+          <p className="text-sm text-white/90">{t.previewHint}</p>
+          <button
+            onClick={closePreview}
+            className="rounded-lg border border-white/40 px-5 py-1.5 text-sm text-white transition-colors hover:border-white"
+          >
+            {t.previewClose}
+          </button>
+        </div>
       )}
     </div>
   );
