@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import ShareLinkButton from '../components/ShareLinkButton';
+import Toggle from '../components/Toggle';
 import { simplifyProfile, encodeRouteShare, decodeRouteShare } from '../lib/routeShare';
 import type { Locale } from '../lib/i18n';
 import {
@@ -94,6 +95,9 @@ const L = {
     titlePlaceholder: '例如：2026-07-06 西進武嶺',
     themeLabel: '出圖主題',
     watermarkLabel: '顯示站名浮水印',
+    steepestLabel: '標注最陡 1km',
+    steepestOnChart: (pct: string) => `最陡 1km ${pct}%`,
+    cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: '賽段剖面圖',
     titleFallback: '我的路線',
     svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ 總爬升 ${ascent} m ・ 海拔 ${minE}–${maxE} m`,
@@ -199,6 +203,9 @@ const L = {
     titlePlaceholder: 'e.g. 2026-07-06 Wuling West',
     themeLabel: 'Theme',
     watermarkLabel: 'Show site watermark',
+    steepestLabel: 'Mark steepest km',
+    steepestOnChart: (pct: string) => `Steepest km ${pct}%`,
+    cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: 'Stage profile chart',
     titleFallback: 'My route',
     svgSubtitle: (km: string, ascent: number, minE: number, maxE: number) => `${km} km ・ ${ascent} m total gain ・ elev. ${minE}–${maxE} m`,
@@ -323,9 +330,19 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t, watermark }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict; watermark: boolean }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t, watermark, steepest }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict; watermark: boolean; steepest: { startM: number; gradientPct: number } | null }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
+  // 游標互動：滑過顯示 km／海拔／坡度（僅螢幕上，離開即清除，不會跟著匯出）
+  const [cursorM, setCursorM] = useState<number | null>(null);
+
+  function pointerToM(clientX: number): number | null {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return null;
+    const px = ((clientX - rect.left) / rect.width) * W;
+    const m = ((px - ML) / PW) * total;
+    return m >= 0 && m <= total ? m : null;
+  }
   const eles = samples.map((s) => s.ele);
   const minE = Math.min(...eles);
   const maxE = Math.max(...eles);
@@ -363,7 +380,18 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
   }
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t.svgAria} className="w-full rounded-[var(--radius-card)] border border-edge" style={{ background: theme.bg }}>
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={t.svgAria}
+      className="w-full rounded-[var(--radius-card)] border border-edge"
+      style={{ background: theme.bg, touchAction: 'pan-y' }}
+      onMouseMove={(e) => setCursorM(pointerToM(e.clientX))}
+      onMouseLeave={() => setCursorM(null)}
+      onTouchMove={(e) => setCursorM(e.touches[0] ? pointerToM(e.touches[0].clientX) : null)}
+      onTouchEnd={() => setCursorM(null)}
+    >
       <rect x={0} y={0} width={W} height={H} fill={theme.bg} />
       {/* 標題與總覽 */}
       <text x={ML} y={30} fill={theme.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || t.titleFallback}</text>
@@ -519,6 +547,43 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
           </g>
         );
       })}
+
+      {/* 最陡 1km 標注（可開關，會一起匯出）：半透明帶＋虛線邊界＋標籤 */}
+      {steepest && (() => {
+        const x1 = x(steepest.startM);
+        const x2 = x(Math.min(steepest.startM + 1000, total));
+        const bandTop = Math.max(...samples.filter((s) => s.distanceM >= steepest.startM && s.distanceM <= steepest.startM + 1000).map((s) => s.ele));
+        const topY = y(bandTop);
+        return (
+          <g fontFamily="system-ui, sans-serif">
+            <rect x={x1} y={topY} width={x2 - x1} height={baseY - topY} fill="#DC2626" opacity={0.13} />
+            <line x1={x1} y1={topY} x2={x1} y2={baseY} stroke="#DC2626" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+            <line x1={x2} y1={topY} x2={x2} y2={baseY} stroke="#DC2626" strokeWidth={1} strokeDasharray="3 3" opacity={0.6} />
+            <text x={(x1 + x2) / 2} y={topY - 6} fill="#DC2626" fontSize={10} fontWeight={700} textAnchor="middle">
+              {t.steepestOnChart(steepest.gradientPct.toFixed(1))}
+            </text>
+          </g>
+        );
+      })()}
+
+      {/* 游標十字線（僅互動顯示；滑鼠/手指離開即消失，不會出現在下載的 PNG） */}
+      {cursorM !== null && (() => {
+        const ele = eleAtM(samples, cursorM);
+        const lo = Math.max(0, cursorM - 100);
+        const hi = Math.min(total, cursorM + 100);
+        const grad = hi > lo ? ((eleAtM(samples, hi) - eleAtM(samples, lo)) / (hi - lo)) * 100 : 0;
+        const cx = x(cursorM);
+        const flip = cursorM > total / 2;
+        return (
+          <g pointerEvents="none" fontFamily="system-ui, sans-serif">
+            <line x1={cx} y1={MT} x2={cx} y2={baseY} stroke={theme.ink} strokeWidth={1} strokeDasharray="4 3" opacity={0.55} />
+            <circle cx={cx} cy={y(ele)} r={3.5} fill={theme.accent} stroke="#fff" strokeWidth={1.5} />
+            <text x={flip ? cx - 8 : cx + 8} y={MT + 14} fill={theme.ink} fontSize={11} fontWeight={600} textAnchor={flip ? 'end' : 'start'}>
+              {t.cursorReadout((cursorM / 1000).toFixed(1), Math.round(ele), grad.toFixed(1))}
+            </text>
+          </g>
+        );
+      })()}
     </svg>
   );
 }
@@ -613,6 +678,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [detailIdx, setDetailIdx] = useState<number | null>(null);
   const [themeIdx, setThemeIdx] = useState(0);
   const [watermark, setWatermark] = useState(true);
+  const [showSteepest, setShowSteepest] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [checkpoints, setCheckpoints] = useState<Array<{ km: string; ele: string }>>([
     { km: '0', ele: '' },
@@ -756,11 +822,15 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     if (svgRef.current) downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg);
   }
 
+  const steepestSpot = useMemo(
+    () => (profile ? steepestKm(profile.samples) : { startM: 0, gradientPct: 0 }),
+    [profile]
+  );
   const stats = profile
     ? {
         km: (profile.totalDistanceM / 1000).toFixed(1),
         ascent: Math.round(totalAscentM(profile.samples)).toString(),
-        steep: steepestKm(profile.samples).gradientPct.toFixed(1),
+        steep: steepestSpot.gradientPct.toFixed(1),
         climbs: climbs.length,
       }
     : null;
@@ -908,13 +978,24 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 {locale === 'en' ? THEME_EN[th.id] ?? th.label : th.label}
               </button>
             ))}
-            <label className="ml-4 flex items-center gap-2 text-sm text-muted">
-              <input type="checkbox" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} />
-              {t.watermarkLabel}
-            </label>
+            <span className="ml-4 flex flex-wrap items-center gap-4">
+              <Toggle label={t.watermarkLabel} checked={watermark} onChange={setWatermark} />
+              <Toggle label={t.steepestLabel} checked={showSteepest} onChange={setShowSteepest} />
+            </span>
           </div>
 
-          <ProfileSvg profile={profile} climbs={climbs} climbNames={climbNames} waypoints={waypoints} title={title} theme={theme} svgRef={svgRef} t={t} watermark={watermark} />
+          <ProfileSvg
+            profile={profile}
+            climbs={climbs}
+            climbNames={climbNames}
+            waypoints={waypoints}
+            title={title}
+            theme={theme}
+            svgRef={svgRef}
+            t={t}
+            watermark={watermark}
+            steepest={showSteepest && steepestSpot.gradientPct >= 1 ? steepestSpot : null}
+          />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <StatCard label={t.statDistance} value={`${stats.km} km`} />

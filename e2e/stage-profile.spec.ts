@@ -61,11 +61,23 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   // 細部圖必須在表格內（行內展開），不是掛在頁面底部
   await expect(page.getByRole('table').getByRole('img', { name: '爬坡細部圖' })).toBeVisible();
 
-  // 浮水印預設開啟且在圖内；關閉核取方塊後消失
+  // 浮水印預設開啟且在圖内；關閉 toggle 後消失
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText('tiglet.vercel.app');
   await page.getByLabel('顯示站名浮水印').uncheck();
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText('tiglet.vercel.app');
   await page.getByLabel('顯示站名浮水印').check();
+
+  // 最陡 1km 標注：預設畫進圖裡（5% 爬坡段）；toggle 關閉後消失
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/最陡 1km 5\.\d%/);
+  await page.getByLabel('標注最陡 1km').uncheck();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText(/最陡 1km/);
+  await page.getByLabel('標注最陡 1km').check();
+
+  // 游標互動：滑到圖中央顯示 km/海拔/坡度讀數
+  const chart = page.getByRole('img', { name: '賽段剖面圖' });
+  const box = (await chart.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(chart).toContainText(/\d+\.\d km ・ \d+ m ・ -?\d+\.\d%/);
   // 8km@5% → 分數 ~40000 → 二級坡（表格徽章；細部圖副標也含「2 級坡」故用 exact）
   await expect(page.getByText('2 級', { exact: true })).toBeVisible();
 
