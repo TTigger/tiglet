@@ -1,5 +1,7 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import ShareLinkButton from '../components/ShareLinkButton';
+import { simplifyProfile, encodeRouteShare, decodeRouteShare } from '../lib/routeShare';
 import type { Locale } from '../lib/i18n';
 import {
   parseGpx,
@@ -130,6 +132,8 @@ const L = {
     wpNamePlaceholder: '例如：西寶補給站',
     wpDeleteAria: (i: number) => `刪除地標 ${i}`,
     downloadPng: '下載 PNG 圖片',
+    shareLabel: '複製分享連結',
+    shareHint: '分享連結帶的是簡化後的路線輪廓（標題＋海拔轉折點＋地標），對方打開即重建剖面圖；不含精確 GPS 軌跡。',
     bucketChip: (label: string, km: string) => `坡度 ${label}：${km} km`,
     footnote: '爬坡分級採「長度 × 平均坡度」通用分數制（≥8000 四級 … ≥80000 HC），與正式賽事官方分級可能不同。 海拔已做平滑處理以消除 GPS 雜訊。',
   },
@@ -233,6 +237,8 @@ const L = {
     wpNamePlaceholder: 'e.g. feed station',
     wpDeleteAria: (i: number) => `Delete waypoint ${i}`,
     downloadPng: 'Download PNG',
+    shareLabel: 'Copy share link',
+    shareHint: 'The share link carries a simplified route outline (title + elevation turning points + waypoints) — opening it rebuilds the profile. It does not contain your precise GPS track.',
     bucketChip: (label: string, km: string) => `Gradient ${label}: ${km} km`,
     footnote: 'Climb categories use the common "length × average gradient" score (≥8000 Cat 4 … ≥80000 HC) and may differ from official race categorization. Elevation is smoothed to remove GPS noise.',
   },
@@ -617,6 +623,26 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const theme = THEMES[themeIdx];
 
+  // 分享連結還原：?r= 帶簡化輪廓 → 零檔案重建剖面圖
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('r');
+    if (!raw) return;
+    const decoded = decodeRouteShare(raw);
+    if (!decoded) return;
+    try {
+      applyTrack(checkpointsToTrackPoints(decoded.checkpoints), decoded.waypoints, decoded.title);
+    } catch {
+      /* 壞連結：維持空白狀態即可 */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 分享碼：剖面簡化成 ≤80 個關鍵點＋標題＋地標（按下按鈕才組進網址）
+  const shareCode = useMemo(
+    () => (profile ? encodeRouteShare({ title, checkpoints: simplifyProfile(profile.samples), waypoints }) : ''),
+    [profile, title, waypoints]
+  );
+
   // 共同管線：軌跡點（＋可選的航點/標題）→ 剖面、爬坡、地標
   function applyTrack(points: TrackPoint[], autoWaypoints: Waypoint[], newTitle: string) {
     const p = buildProfile(points);
@@ -982,6 +1008,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             <button onClick={downloadPng} className="rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
               {t.downloadPng}
             </button>
+            <ShareLinkButton label={t.shareLabel} params={{ r: shareCode }} />
             <div className="flex flex-wrap gap-2 text-xs text-muted">
               {buckets.map((b) => (
                 <span key={b.label} className="rounded border border-edge px-2 py-1">
@@ -991,6 +1018,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             </div>
           </div>
 
+          <p className="text-xs text-muted">{t.shareHint}</p>
           <p className="text-xs text-muted">{t.footnote}</p>
         </>
       )}
