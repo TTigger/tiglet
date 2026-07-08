@@ -5,6 +5,8 @@ import {
   parseTcx,
   fitRecordsToTrackPoints,
   checkpointsToTrackPoints,
+  trimTrack,
+  reverseTrack,
   parseGpxWaypoints,
   locateOnTrack,
   haversineM,
@@ -140,6 +142,46 @@ describe('gradientBuckets', () => {
     expect(buckets[0].distanceM).toBeGreaterThan(3000);
     // 陡坡帶要存在
     expect(buckets[buckets.length - 1].distanceM).toBeGreaterThan(1000);
+  });
+});
+
+describe('trimTrack / reverseTrack（裁切與反轉）', () => {
+  // 12km：0–2 平路(100m) → 2–10 爬升 5% → 10–12 平路(500m)
+  function rampTrack() {
+    return checkpointsToTrackPoints([
+      { km: 0, ele: 100 },
+      { km: 2, ele: 100 },
+      { km: 10, ele: 500 },
+      { km: 12, ele: 500 },
+    ]);
+  }
+
+  it('裁切 2–10km → 總長 8km、起點海拔 ≈100、仍偵測二級坡', () => {
+    const trimmed = trimTrack(rampTrack(), 2000, 10000);
+    const p = buildProfile(trimmed);
+    expect(p.totalDistanceM).toBeGreaterThan(7800);
+    expect(p.totalDistanceM).toBeLessThan(8200);
+    // 起點海拔 ≈100（平滑窗會拉入緊鄰的爬坡點，允許小幅上偏）
+    expect(p.samples[0].ele).toBeGreaterThanOrEqual(100);
+    expect(p.samples[0].ele).toBeLessThan(110);
+    const climbs = detectClimbs(p.samples);
+    expect(climbs).toHaveLength(1);
+    expect(climbs[0].category).toBe('2');
+  });
+
+  it('反轉後爬坡變下坡：總爬升趨近 0、起點海拔變 500、距離不變', () => {
+    const reversed = reverseTrack(rampTrack());
+    const p = buildProfile(reversed);
+    expect(p.samples[0].ele).toBeCloseTo(500, 0);
+    expect(totalAscentM(p.samples)).toBeLessThan(10);
+    expect(detectClimbs(p.samples)).toHaveLength(0);
+    expect(p.totalDistanceM).toBeGreaterThan(11800);
+  });
+
+  it('無效範圍與過短區段拋錯', () => {
+    expect(() => trimTrack(rampTrack(), 5000, 5000)).toThrow();
+    expect(() => trimTrack(rampTrack(), 8000, 2000)).toThrow();
+    expect(() => trimTrack(rampTrack(), 11990, 12000)).toThrow();
   });
 });
 

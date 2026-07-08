@@ -171,6 +171,27 @@ export function locateOnTrack(points: TrackPoint[], lat: number, lon: number): {
   return best.offTrackM <= OFF_ROUTE_MAX_M ? best : null;
 }
 
+// 裁切路線：依「累積距離」取出 startM–endM 的區段（實騎檔常帶市區暖身/回程）
+export function trimTrack(points: TrackPoint[], startM: number, endM: number): TrackPoint[] {
+  if (!Number.isFinite(startM) || !Number.isFinite(endM) || startM >= endM) {
+    throw new Error('裁切範圍無效：起點必須小於終點');
+  }
+  const out: TrackPoint[] = [];
+  let cum = 0;
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0) cum += haversineM(points[i - 1].lat, points[i - 1].lon, points[i].lat, points[i].lon);
+    if (cum >= startM && cum <= endM) out.push(points[i]);
+    if (cum > endM) break;
+  }
+  if (out.length < 2) throw new Error('裁切後的路段太短，請調整範圍');
+  return out;
+}
+
+// 反轉方向：終點變起點（管線會依座標重算距離與坡度）
+export function reverseTrack(points: TrackPoint[]): TrackPoint[] {
+  return [...points].reverse();
+}
+
 export function haversineM(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
