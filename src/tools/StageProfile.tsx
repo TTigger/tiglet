@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import ShareLinkButton from '../components/ShareLinkButton';
+import Tabs from '../components/Tabs';
 import Toggle from '../components/Toggle';
 import { simplifyProfile, encodeRouteShare, decodeRouteShare } from '../lib/routeShare';
 import type { Locale } from '../lib/i18n';
@@ -115,6 +116,10 @@ const L = {
     size4x: '超大 3360×1520',
     sizeStory: 'IG 限動 1080×1920',
     transparentLabel: '透明背景',
+    tabChart: '圖面',
+    tabEdit: '編輯',
+    tabExport: '輸出',
+    changeRoute: '換一條路線',
     previewBtn: '預覽圖片',
     previewHint: '長按圖片即可儲存到照片',
     previewHintDesktop: '在圖片上按右鍵可另存或複製',
@@ -247,6 +252,10 @@ const L = {
     size4x: 'XL 3360×1520',
     sizeStory: 'IG story 1080×1920',
     transparentLabel: 'Transparent background',
+    tabChart: 'Chart',
+    tabEdit: 'Edit',
+    tabExport: 'Export',
+    changeRoute: 'Switch route',
     previewBtn: 'Preview image',
     previewHint: 'Long-press the image to save it to Photos',
     previewHintDesktop: 'Right-click the image to save or copy it',
@@ -819,6 +828,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [canCopyImage, setCanCopyImage] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [copiedImage, setCopiedImage] = useState(false);
+  const [panelTab, setPanelTab] = useState<'chart' | 'edit' | 'export'>('chart');
 
   useEffect(() => {
     setIsTouch(window.matchMedia('(pointer: coarse)').matches);
@@ -1109,8 +1119,9 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     : null;
   const buckets = profile ? gradientBuckets(profile.samples) : null;
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-4">
+  // 來源區（上傳／教學／手動建路線）：未出圖時完整攤開，出圖後收合成一列
+  const sourceBlocks = (
+    <>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
@@ -1223,11 +1234,40 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
           </div>
         </div>
       </details>
+    </>
+  );
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4 lg:max-w-none">
+      {profile ? (
+        <details className="rounded-[var(--radius-card)] border border-edge bg-surface px-4 py-3 text-sm">
+          <summary className="cursor-pointer text-muted hover:text-accent">
+            ⛰ {title || t.titleFallback} ・ {t.changeRoute} ▾
+          </summary>
+          <div className="mt-4 space-y-4">{sourceBlocks}</div>
+        </details>
+      ) : (
+        <div className="space-y-4">{sourceBlocks}</div>
+      )}
 
       {error && <p className="text-center text-sm text-red-500">{error}</p>}
 
       {profile && stats && buckets && (
-        <>
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-6">
+          {/* 右側控制面板：桌機 sticky 側欄、跨兩列；手機排在主圖之後（order-2） */}
+          <aside className="order-2 w-full self-start lg:order-none lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+            <Tabs
+              tabs={[
+                { id: 'chart', label: t.tabChart },
+                { id: 'edit', label: t.tabEdit },
+                { id: 'export', label: t.tabExport },
+              ]}
+              active={panelTab}
+              onChange={(id) => setPanelTab(id as typeof panelTab)}
+            />
+            <div className="space-y-4 rounded-[var(--radius-card)] border border-edge bg-surface p-4">
+              {panelTab === 'chart' && (
+                <>
           <label className="block">
             <span className="mb-1 block text-sm text-muted">{t.titleLabel}</span>
             <input
@@ -1251,13 +1291,17 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 {locale === 'en' ? THEME_EN[th.id] ?? th.label : th.label}
               </button>
             ))}
-            <span className="ml-4 flex flex-wrap items-center gap-4">
-              <Toggle label={t.watermarkLabel} checked={watermark} onChange={setWatermark} />
-              <Toggle label={t.steepestLabel} checked={showSteepest} onChange={setShowSteepest} />
-            </span>
           </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Toggle label={t.watermarkLabel} checked={watermark} onChange={setWatermark} />
+            <Toggle label={t.steepestLabel} checked={showSteepest} onChange={setShowSteepest} />
+          </div>
+                </>
+              )}
 
-          {/* 視圖編輯：裁切區段（實騎檔常帶市區暖身/回程）與方向反轉 */}
+              {panelTab === 'edit' && (
+                <>
+          {/* 視圖編輯：反轉方向與裁切區段（實騎檔常帶市區暖身/回程） */}
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <button
               onClick={reverseRoute}
@@ -1265,7 +1309,14 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             >
               {t.reverse}
             </button>
-            <span className="ml-2 text-muted">{t.trimLabel}</span>
+            {edited && (
+              <button onClick={resetView} className="text-accent hover:underline">
+                {t.trimReset}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted">{t.trimLabel}</span>
             <input
               type="number"
               value={trimStart}
@@ -1290,33 +1341,115 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             >
               {t.trimApply}
             </button>
-            {edited && (
-              <button onClick={resetView} className="text-accent hover:underline">
-                {t.trimReset}
+          </div>
+          <div className="text-sm">
+            {compare ? (
+              <span className="flex items-center gap-2 text-muted">
+                <span className="inline-block h-0.5 w-5 rounded bg-[#2563EB]" />
+                {t.comparing(compare.title || t.compareFallback)}
+                <button onClick={() => setCompare(null)} aria-label={t.compareRemove} className="text-muted hover:text-red-500">✕</button>
+              </span>
+            ) : (
+              <label className="cursor-pointer text-accent hover:underline">
+                {t.compareAdd}
+                <input
+                  type="file"
+                  accept=".gpx,.fit,.tcx"
+                  aria-label={t.compareAria}
+                  onChange={async (e) => { const f = e.target.files?.[0]; if (f) await loadCompare(f); e.target.value = ''; }}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+          <div className="border-t border-edge pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-ink">{t.wpSection}</span>
+              <button
+                onClick={() => setWaypoints((prev) => [...prev, { km: '', name: '' }])}
+                className="text-sm text-accent hover:underline"
+              >
+                {t.wpAdd}
+              </button>
+            </div>
+            {waypoints.length === 0 ? (
+              <p className="text-xs text-muted">{t.wpHint}</p>
+            ) : (
+              <div className="space-y-2">
+                {waypoints.map((w, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={w.km}
+                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, km: e.target.value } : p)))}
+                      placeholder="26"
+                      aria-label={t.wpKmAria(i + 1)}
+                      className="w-20 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                    />
+                    <span className="text-xs text-muted">km</span>
+                    <input
+                      value={w.name}
+                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, name: e.target.value } : p)))}
+                      placeholder={t.wpNamePlaceholder}
+                      aria-label={t.wpNameAria(i + 1)}
+                      className="flex-1 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
+                    />
+                    <button
+                      onClick={() => setWaypoints((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={t.wpDeleteAria(i + 1)}
+                      className="text-sm text-muted hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+                </>
+              )}
+
+              {panelTab === 'export' && (
+                <>
+          <button onClick={downloadPng} className="w-full rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
+            {t.downloadPng}
+          </button>
+          <select
+            value={exportSize}
+            onChange={(e) => setExportSize(e.target.value as typeof exportSize)}
+            aria-label={t.exportSizeAria}
+            className="w-full rounded-lg border border-edge bg-bg px-2 py-2 text-sm text-ink outline-none focus:border-accent"
+          >
+            <option value="1">{t.size1x}</option>
+            <option value="2">{t.size2x}</option>
+            <option value="4">{t.size4x}</option>
+            <option value="story">{t.sizeStory}</option>
+          </select>
+          <Toggle label={t.transparentLabel} checked={transparent} onChange={setTransparent} />
+          <div className="flex flex-wrap gap-2">
+            <button onClick={openPreview} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+              {t.previewBtn}
+            </button>
+            {canShareFiles && (
+              <button onClick={shareImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+                {t.shareImageBtn}
               </button>
             )}
-            <span className="ml-auto">
-              {compare ? (
-                <span className="flex items-center gap-2 text-muted">
-                  <span className="inline-block h-0.5 w-5 rounded bg-[#2563EB]" />
-                  {t.comparing(compare.title || t.compareFallback)}
-                  <button onClick={() => setCompare(null)} aria-label={t.compareRemove} className="text-muted hover:text-red-500">✕</button>
-                </span>
-              ) : (
-                <label className="cursor-pointer text-accent hover:underline">
-                  {t.compareAdd}
-                  <input
-                    type="file"
-                    accept=".gpx,.fit,.tcx"
-                    aria-label={t.compareAria}
-                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) await loadCompare(f); e.target.value = ''; }}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </span>
+            {!isTouch && canCopyImage && (
+              <button onClick={copyImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+                {copiedImage ? t.copiedImage : t.copyImageBtn}
+              </button>
+            )}
+            <ShareLinkButton label={t.shareLabel} params={{ r: shareCode }} />
           </div>
+          <p className="text-xs text-muted">{t.shareHint}</p>
+                </>
+              )}
+            </div>
+          </aside>
 
+          {/* 左上：主圖與統計 */}
+          <div className="order-1 space-y-4 lg:order-none lg:col-start-1 lg:row-start-1">
           <ProfileSvg
             profile={profile}
             climbs={climbs}
@@ -1337,7 +1470,18 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             <StatCard label={t.statSteepest} value={`${stats.steep}%`} />
             <StatCard label={t.statClimbs} value={t.climbsValue(stats.climbs)} />
           </div>
+          {/* 坡度分布統計（從下載列歸位到統計區） */}
+          <div className="flex flex-wrap gap-2 text-xs text-muted">
+            {buckets.map((b) => (
+              <span key={b.label} className="rounded border border-edge px-2 py-1">
+                {t.bucketChip(b.label, (b.distanceM / 1000).toFixed(1))}
+              </span>
+            ))}
+          </div>
+          </div>
 
+          {/* 左下：爬坡表與註腳 */}
+          <div className="order-3 space-y-4 lg:order-none lg:col-start-1 lg:row-start-2">
           {climbs.length > 0 && (
             <div className="overflow-x-auto rounded-[var(--radius-card)] border border-edge bg-surface">
               <table className="w-full text-sm">
@@ -1399,93 +1543,9 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             </div>
           )}
 
-          <div className="rounded-[var(--radius-card)] border border-edge bg-surface p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm text-ink">{t.wpSection}</span>
-              <button
-                onClick={() => setWaypoints((prev) => [...prev, { km: '', name: '' }])}
-                className="text-sm text-accent hover:underline"
-              >
-                {t.wpAdd}
-              </button>
-            </div>
-            {waypoints.length === 0 ? (
-              <p className="text-xs text-muted">{t.wpHint}</p>
-            ) : (
-              <div className="space-y-2">
-                {waypoints.map((w, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={w.km}
-                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, km: e.target.value } : p)))}
-                      placeholder="26"
-                      aria-label={t.wpKmAria(i + 1)}
-                      className="w-20 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
-                    />
-                    <span className="text-xs text-muted">km</span>
-                    <input
-                      value={w.name}
-                      onChange={(e) => setWaypoints((prev) => prev.map((p, j) => (j === i ? { ...p, name: e.target.value } : p)))}
-                      placeholder={t.wpNamePlaceholder}
-                      aria-label={t.wpNameAria(i + 1)}
-                      className="flex-1 rounded border border-edge bg-bg px-2 py-1 text-sm text-ink outline-none focus:border-accent"
-                    />
-                    <button
-                      onClick={() => setWaypoints((prev) => prev.filter((_, j) => j !== i))}
-                      aria-label={t.wpDeleteAria(i + 1)}
-                      className="text-sm text-muted hover:text-red-500"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button onClick={downloadPng} className="rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
-              {t.downloadPng}
-            </button>
-            <select
-              value={exportSize}
-              onChange={(e) => setExportSize(e.target.value as typeof exportSize)}
-              aria-label={t.exportSizeAria}
-              className="rounded-lg border border-edge bg-surface px-2 py-2 text-sm text-ink outline-none focus:border-accent"
-            >
-              <option value="1">{t.size1x}</option>
-              <option value="2">{t.size2x}</option>
-              <option value="4">{t.size4x}</option>
-              <option value="story">{t.sizeStory}</option>
-            </select>
-            <Toggle label={t.transparentLabel} checked={transparent} onChange={setTransparent} />
-            <button onClick={openPreview} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
-              {t.previewBtn}
-            </button>
-            {canShareFiles && (
-              <button onClick={shareImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
-                {t.shareImageBtn}
-              </button>
-            )}
-            {!isTouch && canCopyImage && (
-              <button onClick={copyImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
-                {copiedImage ? t.copiedImage : t.copyImageBtn}
-              </button>
-            )}
-            <ShareLinkButton label={t.shareLabel} params={{ r: shareCode }} />
-            <div className="flex flex-wrap gap-2 text-xs text-muted">
-              {buckets.map((b) => (
-                <span key={b.label} className="rounded border border-edge px-2 py-1">
-                  {t.bucketChip(b.label, (b.distanceM / 1000).toFixed(1))}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <p className="text-xs text-muted">{t.shareHint}</p>
           <p className="text-xs text-muted">{t.footnote}</p>
-        </>
+          </div>
+        </div>
       )}
 
       {/* 預覽燈箱：顯示渲染後的 PNG，交給系統的「長按 → 儲存影像」進照片圖庫 */}
