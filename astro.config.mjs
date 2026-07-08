@@ -17,6 +17,11 @@ export default defineConfig({
     }),
     AstroPWA({
       registerType: 'autoUpdate',
+      // share_target 收檔案需要攔 POST → 自訂 SW（src/sw.ts）；
+      // 原 generateSW 的 runtimeCaching 已 1:1 搬進去
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       manifest: {
         name: 'Tiglet',
         short_name: 'Tiglet',
@@ -30,29 +35,34 @@ export default defineConfig({
           { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
           { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        runtimeCaching: [
-          {
-            // 匯率 API：正常走網路、失敗退快取（配合工具內的三層備援）
-            urlPattern: /^https:\/\/open\.er-api\.com\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'exchange-rates',
-              expiration: { maxEntries: 1, maxAgeSeconds: 7 * 24 * 60 * 60 },
-            },
+        // 系統分享選單：其他 app 的 GPX/FIT/TCX 可直接「分享到 Tiglet」
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            files: [
+              {
+                name: 'file',
+                accept: ['.gpx', '.fit', '.tcx', 'application/gpx+xml', 'application/xml', 'application/octet-stream'],
+              },
+            ],
           },
+        },
+        // 檔案關聯：作業系統可用 Tiglet 直接開啟軌跡檔
+        file_handlers: [
           {
-            // Google Fonts：離線時退快取，避免字型跳動
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+            action: '/tools/stage-profile',
+            accept: {
+              'application/gpx+xml': ['.gpx'],
+              'application/xml': ['.tcx'],
+              'application/octet-stream': ['.fit'],
             },
           },
         ],
+      },
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
       },
     }),
   ],

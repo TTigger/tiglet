@@ -637,6 +637,31 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // PWA 入口 ①：系統分享選單（share_target）——SW 把檔案放進 Cache 後導來這裡
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('shared') !== '1' || !('caches' in window)) return;
+    (async () => {
+      const cache = await caches.open('tiglet-shared');
+      const res = await cache.match('/shared-file');
+      if (!res) return;
+      const name = decodeURIComponent(res.headers.get('x-file-name') ?? 'shared.gpx');
+      const blob = await res.blob();
+      await cache.delete('/shared-file');
+      loadFile(new File([blob], name));
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // PWA 入口 ②：作業系統「以 Tiglet 開啟」軌跡檔（file_handlers / launchQueue）
+  useEffect(() => {
+    const lq = (window as unknown as { launchQueue?: { setConsumer: (cb: (p: { files?: Array<{ getFile(): Promise<File> }> }) => void) => void } }).launchQueue;
+    lq?.setConsumer(async (params) => {
+      const handle = params.files?.[0];
+      if (handle) loadFile(await handle.getFile());
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 分享碼：剖面簡化成 ≤80 個關鍵點＋標題＋地標（按下按鈕才組進網址）
   const shareCode = useMemo(
     () => (profile ? encodeRouteShare({ title, checkpoints: simplifyProfile(profile.samples), waypoints }) : ''),
