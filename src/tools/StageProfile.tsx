@@ -104,6 +104,17 @@ const L = {
     trimEndAria: '裁切終點 km',
     trimApply: '套用裁切',
     trimReset: '回復完整路線',
+    compareAdd: '＋ 疊加比較路線',
+    compareAria: '上傳比較路線',
+    comparing: (name: string) => `對比中：${name}`,
+    compareRemove: '移除比較路線',
+    compareFallback: '比較路線',
+    exportSizeAria: '匯出尺寸',
+    size1x: '小圖 840×380',
+    size2x: '標準 1680×760',
+    size4x: '超大 3360×1520',
+    sizeStory: 'IG 限動 1080×1920',
+    transparentLabel: '透明背景',
     steepestOnChart: (pct: string) => `最陡 1km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: '賽段剖面圖',
@@ -218,6 +229,17 @@ const L = {
     trimEndAria: 'Trim end km',
     trimApply: 'Apply trim',
     trimReset: 'Restore full route',
+    compareAdd: '+ Overlay a comparison route',
+    compareAria: 'Upload comparison route',
+    comparing: (name: string) => `Comparing: ${name}`,
+    compareRemove: 'Remove comparison route',
+    compareFallback: 'Comparison route',
+    exportSizeAria: 'Export size',
+    size1x: 'Small 840×380',
+    size2x: 'Standard 1680×760',
+    size4x: 'XL 3360×1520',
+    sizeStory: 'IG story 1080×1920',
+    transparentLabel: 'Transparent background',
     steepestOnChart: (pct: string) => `Steepest km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: 'Stage profile chart',
@@ -309,21 +331,44 @@ function catColor(id: string | null): string {
   return CLIMB_CATEGORIES.find((c) => c.id === id)?.color ?? '#8A8A82';
 }
 
-// SVG → 2x PNG 下載（主圖與爬坡細部圖共用）
-function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string, bg: string) {
-  const xml = new XMLSerializer().serializeToString(svg);
+// SVG → PNG 下載（主圖與爬坡細部圖共用）
+interface ExportOpts {
+  scale?: number; // 1 / 2 / 4 倍輸出（預設 2）
+  story?: boolean; // IG 限動 9:16（1080×1920，圖表垂直置中）
+  transparent?: boolean; // 去背：略過畫布底色並移除 SVG 內的背景矩形
+}
+
+function downloadSvgAsPng(svg: SVGSVGElement, width: number, height: number, filename: string, bg: string, opts: ExportOpts = {}) {
+  let source = svg;
+  if (opts.transparent) {
+    source = svg.cloneNode(true) as SVGSVGElement;
+    source.querySelector('[data-bg]')?.remove();
+  }
+  const xml = new XMLSerializer().serializeToString(source);
   const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const img = new Image();
   img.onload = () => {
-    const scale = 2;
     const canvas = document.createElement('canvas');
-    canvas.width = width * scale;
-    canvas.height = height * scale;
+    if (opts.story) {
+      canvas.width = 1080;
+      canvas.height = 1920;
+    } else {
+      const scale = opts.scale ?? 2;
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+    }
     const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    if (!opts.transparent) {
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (opts.story) {
+      const dh = (height * 1080) / width;
+      ctx.drawImage(img, 0, (1920 - dh) / 2, 1080, dh);
+    } else {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
     URL.revokeObjectURL(url);
     canvas.toBlob((png) => {
       if (!png) return;
@@ -344,9 +389,11 @@ function tickStepKm(totalKm: number): number {
   return 50;
 }
 
-function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t, watermark, steepest }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict; watermark: boolean; steepest: { startM: number; gradientPct: number } | null }) {
+function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgRef, t, watermark, steepest, compare }: { profile: Profile; climbs: Climb[]; climbNames: string[]; waypoints: Waypoint[]; title: string; theme: ProfileTheme; svgRef: React.RefObject<SVGSVGElement | null>; t: Dict; watermark: boolean; steepest: { startM: number; gradientPct: number } | null; compare: { profile: Profile; title: string } | null }) {
   const samples = profile.samples;
   const total = profile.totalDistanceM;
+  // 疊圖比較：X 軸取兩條路線較長者、Y 域包住兩者的海拔範圍
+  const chartTotal = Math.max(total, compare?.profile.totalDistanceM ?? 0);
   // 游標互動：滑過顯示 km／海拔／坡度（僅螢幕上，離開即清除，不會跟著匯出）
   const [cursorM, setCursorM] = useState<number | null>(null);
 
@@ -354,19 +401,20 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return null;
     const px = ((clientX - rect.left) / rect.width) * W;
-    const m = ((px - ML) / PW) * total;
+    const m = ((px - ML) / PW) * chartTotal;
     return m >= 0 && m <= total ? m : null;
   }
   const eles = samples.map((s) => s.ele);
-  const minE = Math.min(...eles);
-  const maxE = Math.max(...eles);
+  const compEles = compare ? compare.profile.samples.map((s) => s.ele) : [];
+  const minE = Math.min(...eles, ...(compEles.length ? compEles : [Infinity]));
+  const maxE = Math.max(...eles, ...(compEles.length ? compEles : [-Infinity]));
   const range = Math.max(maxE - minE, 50); // 平路也要有一點山形
   // 級距先以原始高低差選定（3–6 條刻度），再把繪圖域頂端「圓整」到
   // 一條高於最高點的整數格線（含 12% 徽章空間）——Y 軸永遠包住山頂
   const eleStep = [10, 20, 50, 100, 200, 250, 500, 1000].find((s) => range / s <= 5) ?? 1000;
   const niceTop = Math.ceil((maxE + range * 0.12) / eleStep) * eleStep;
   const domain = niceTop - minE;
-  const x = (d: number) => ML + (d / total) * PW;
+  const x = (d: number) => ML + (d / chartTotal) * PW;
   const y = (e: number) => MT + (1 - (e - minE) / domain) * PH;
   const baseY = MT + PH;
 
@@ -382,9 +430,10 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
   };
 
   const totalKm = total / 1000;
-  const step = tickStepKm(totalKm);
+  const chartKm = chartTotal / 1000;
+  const step = tickStepKm(chartKm);
   const ticks: number[] = [];
-  for (let km = step; km < totalKm; km += step) ticks.push(km);
+  for (let km = step; km < chartKm; km += step) ticks.push(km);
   const ascent = totalAscentM(samples);
 
   // Y 軸海拔刻度：畫到圓整後的頂界；貼著最高點標線的刻度跳過以免標籤打架
@@ -406,7 +455,7 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
       onTouchMove={(e) => setCursorM(e.touches[0] ? pointerToM(e.touches[0].clientX) : null)}
       onTouchEnd={() => setCursorM(null)}
     >
-      <rect x={0} y={0} width={W} height={H} fill={theme.bg} />
+      <rect data-bg="1" x={0} y={0} width={W} height={H} fill={theme.bg} />
       {/* 標題與總覽 */}
       <text x={ML} y={30} fill={theme.ink} fontSize={20} fontWeight={700} fontFamily="Georgia, 'Noto Serif TC', serif">{title || t.titleFallback}</text>
       <text x={ML} y={50} fill={theme.muted} fontSize={12} fontFamily="system-ui, sans-serif">
@@ -562,6 +611,29 @@ function ProfileSvg({ profile, climbs, climbNames, waypoints, title, theme, svgR
         );
       })}
 
+      {/* 疊圖比較路線：藍色描邊線＋線尾標籤（會一起匯出） */}
+      {compare && compare.profile.samples.length > 1 && (() => {
+        const cs = compare.profile.samples;
+        const path = cs.map((s, i) => `${i === 0 ? 'M' : 'L'}${x(s.distanceM).toFixed(1)},${y(s.ele).toFixed(1)}`).join(' ');
+        const last = cs[cs.length - 1];
+        const flip = last.distanceM > chartTotal * 0.75;
+        return (
+          <g fontFamily="system-ui, sans-serif">
+            <path d={path} fill="none" stroke="#2563EB" strokeWidth={2.5} opacity={0.85} strokeLinejoin="round" />
+            <text
+              x={flip ? x(last.distanceM) - 6 : x(last.distanceM) + 6}
+              y={y(last.ele) - 6}
+              fill="#2563EB"
+              fontSize={11}
+              fontWeight={700}
+              textAnchor={flip ? 'end' : 'start'}
+            >
+              {compare.title || t.compareFallback}
+            </text>
+          </g>
+        );
+      })()}
+
       {/* 最陡 1km 標注（可開關，會一起匯出）：半透明帶＋虛線邊界＋標籤 */}
       {steepest && (() => {
         const x1 = x(steepest.startM);
@@ -709,6 +781,9 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [edited, setEdited] = useState(false); // 目前視圖被裁切/反轉過
   const [trimStart, setTrimStart] = useState('');
   const [trimEnd, setTrimEnd] = useState('');
+  const [compare, setCompare] = useState<{ profile: Profile; title: string } | null>(null);
+  const [exportSize, setExportSize] = useState<'1' | '2' | '4' | 'story'>('2');
+  const [transparent, setTransparent] = useState(false);
 
   // 分享連結還原：?r= 帶簡化輪廓 → 零檔案重建剖面圖
   useEffect(() => {
@@ -819,37 +894,52 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     setEdited(false);
   }
 
+  // 三種格式共用的檔案解析：回傳軌跡點＋自動航點＋標題
+  async function parseTrackFile(file: File): Promise<{ points: TrackPoint[]; autoWaypoints: Waypoint[]; title: string }> {
+    const ext = file.name.toLowerCase().split('.').pop() ?? '';
+    if (ext === 'fit') {
+      // FIT 為二進位格式：解析器動態載入（沿用 xlsx/marked 前例）
+      const { default: FitParser } = await import('fit-file-parser');
+      const buf = await file.arrayBuffer();
+      const records = await new Promise<import('../lib/gpx').FitRecordLike[]>((resolve, reject) => {
+        new FitParser({ mode: 'list' }).parse(buf, (err: unknown, data: { records?: import('../lib/gpx').FitRecordLike[] }) => {
+          if (err) reject(new Error(t.readError));
+          else resolve(data?.records ?? []);
+        });
+      });
+      return { points: fitRecordsToTrackPoints(records), autoWaypoints: [], title: file.name.replace(/\.fit$/i, '') };
+    }
+    const xml = await file.text();
+    if (ext === 'tcx') {
+      return { points: parseTcx(xml), autoWaypoints: [], title: file.name.replace(/\.tcx$/i, '') };
+    }
+    const points = parseGpx(xml);
+    // GPX 自帶的 <wpt> 航點（補給站/地標）自動帶入地標編輯器，仍可改可刪
+    const autoWaypoints: Waypoint[] = parseGpxWaypoints(xml)
+      .map((w) => ({ w, loc: locateOnTrack(points, w.lat, w.lon) }))
+      .filter((x): x is { w: ReturnType<typeof parseGpxWaypoints>[number]; loc: NonNullable<ReturnType<typeof locateOnTrack>> } => x.loc !== null)
+      .map(({ w, loc }) => ({ km: (loc.distanceM / 1000).toFixed(1), name: w.name }));
+    return { points, autoWaypoints, title: parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, '') };
+  }
+
   async function loadFile(file: File) {
     setError('');
     try {
-      const ext = file.name.toLowerCase().split('.').pop() ?? '';
-      if (ext === 'fit') {
-        // FIT 為二進位格式：解析器動態載入（沿用 xlsx/marked 前例）
-        const { default: FitParser } = await import('fit-file-parser');
-        const buf = await file.arrayBuffer();
-        const records = await new Promise<import('../lib/gpx').FitRecordLike[]>((resolve, reject) => {
-          new FitParser({ mode: 'list' }).parse(buf, (err: unknown, data: { records?: import('../lib/gpx').FitRecordLike[] }) => {
-            if (err) reject(new Error(t.readError));
-            else resolve(data?.records ?? []);
-          });
-        });
-        applyTrack(fitRecordsToTrackPoints(records), [], file.name.replace(/\.fit$/i, ''));
-        return;
-      }
-      const xml = await file.text();
-      if (ext === 'tcx') {
-        applyTrack(parseTcx(xml), [], file.name.replace(/\.tcx$/i, ''));
-        return;
-      }
-      const points = parseGpx(xml);
-      // GPX 自帶的 <wpt> 航點（補給站/地標）自動帶入地標編輯器，仍可改可刪
-      const autoWaypoints: Waypoint[] = parseGpxWaypoints(xml)
-        .map((w) => ({ w, loc: locateOnTrack(points, w.lat, w.lon) }))
-        .filter((x): x is { w: ReturnType<typeof parseGpxWaypoints>[number]; loc: NonNullable<ReturnType<typeof locateOnTrack>> } => x.loc !== null)
-        .map(({ w, loc }) => ({ km: (loc.distanceM / 1000).toFixed(1), name: w.name }));
-      applyTrack(points, autoWaypoints, parseGpxName(xml) ?? file.name.replace(/\.gpx$/i, ''));
+      const r = await parseTrackFile(file);
+      applyTrack(r.points, r.autoWaypoints, r.title);
     } catch (err) {
       setProfile(null);
+      setError(err instanceof Error ? err.message : t.readError);
+    }
+  }
+
+  // 疊圖比較：第二條路線只取剖面，畫成藍色描邊線（不影響主路線的統計/爬坡）
+  async function loadCompare(file: File) {
+    setError('');
+    try {
+      const r = await parseTrackFile(file);
+      setCompare({ profile: buildProfile(r.points), title: r.title });
+    } catch (err) {
       setError(err instanceof Error ? err.message : t.readError);
     }
   }
@@ -892,7 +982,10 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   }
 
   function downloadPng() {
-    if (svgRef.current) downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg);
+    if (!svgRef.current) return;
+    const opts: ExportOpts = exportSize === 'story' ? { story: true } : { scale: Number(exportSize) };
+    opts.transparent = transparent;
+    downloadSvgAsPng(svgRef.current, W, H, `${title.trim() || 'stage-profile'}.png`, theme.bg, opts);
   }
 
   const steepestSpot = useMemo(
@@ -1095,6 +1188,26 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
                 {t.trimReset}
               </button>
             )}
+            <span className="ml-auto">
+              {compare ? (
+                <span className="flex items-center gap-2 text-muted">
+                  <span className="inline-block h-0.5 w-5 rounded bg-[#2563EB]" />
+                  {t.comparing(compare.title || t.compareFallback)}
+                  <button onClick={() => setCompare(null)} aria-label={t.compareRemove} className="text-muted hover:text-red-500">✕</button>
+                </span>
+              ) : (
+                <label className="cursor-pointer text-accent hover:underline">
+                  {t.compareAdd}
+                  <input
+                    type="file"
+                    accept=".gpx,.fit,.tcx"
+                    aria-label={t.compareAria}
+                    onChange={async (e) => { const f = e.target.files?.[0]; if (f) await loadCompare(f); e.target.value = ''; }}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </span>
           </div>
 
           <ProfileSvg
@@ -1108,6 +1221,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             t={t}
             watermark={watermark}
             steepest={showSteepest && steepestSpot.gradientPct >= 1 ? steepestSpot : null}
+            compare={compare}
           />
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -1227,6 +1341,18 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             <button onClick={downloadPng} className="rounded-lg bg-accent px-6 py-3 text-white transition-colors hover:bg-[var(--color-accent-hover)]">
               {t.downloadPng}
             </button>
+            <select
+              value={exportSize}
+              onChange={(e) => setExportSize(e.target.value as typeof exportSize)}
+              aria-label={t.exportSizeAria}
+              className="rounded-lg border border-edge bg-surface px-2 py-2 text-sm text-ink outline-none focus:border-accent"
+            >
+              <option value="1">{t.size1x}</option>
+              <option value="2">{t.size2x}</option>
+              <option value="4">{t.size4x}</option>
+              <option value="story">{t.sizeStory}</option>
+            </select>
+            <Toggle label={t.transparentLabel} checked={transparent} onChange={setTransparent} />
             <ShareLinkButton label={t.shareLabel} params={{ r: shareCode }} />
             <div className="flex flex-wrap gap-2 text-xs text-muted">
               {buckets.map((b) => (
