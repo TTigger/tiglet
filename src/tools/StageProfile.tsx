@@ -357,6 +357,8 @@ function renderSvgToPng(svg: SVGSVGElement, width: number, height: number, bg: s
     if (opts.transparent) {
       source = svg.cloneNode(true) as SVGSVGElement;
       source.querySelector('[data-bg]')?.remove();
+      // 根元素的 CSS 背景（螢幕顯示用）會被序列化帶進匯出，透明模式必須一併清掉
+      source.style.background = 'transparent';
     }
     const xml = new XMLSerializer().serializeToString(source);
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });

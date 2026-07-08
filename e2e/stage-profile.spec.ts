@@ -283,6 +283,41 @@ test.describe('觸控裝置匯出按鈕', () => {
   });
 });
 
+test('透明背景：匯出 PNG 的角落與主圖上緣像素 alpha 必須為 0', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+  await page.getByRole('button', { name: /載入範例路線/ }).click();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+
+  await page.getByLabel('匯出尺寸').selectOption('1');
+  await page.getByLabel('透明背景').check();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '下載 PNG 圖片' }).click();
+  const download = await downloadPromise;
+  const { readFileSync } = await import('node:fs');
+  const b64 = readFileSync((await download.path())!).toString('base64');
+
+  // 在瀏覽器裡解碼 PNG 抽像素：左上角（畫布邊緣）與主圖上緣中央
+  // （修正前根元素 CSS 背景會把整張蓋滿 → alpha 255）
+  const alpha = await page.evaluate(async (data) => {
+    const img = new Image();
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('decode failed'));
+      img.src = `data:image/png;base64,${data}`;
+    });
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const a = (x: number, y: number) => ctx.getImageData(x, y, 1, 1).data[3];
+    return { corner: a(2, 2), midTop: a(Math.floor(img.width / 2), 8) };
+  }, b64);
+  expect(alpha.corner).toBe(0);
+  expect(alpha.midTop).toBe(0);
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
