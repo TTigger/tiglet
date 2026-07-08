@@ -10,6 +10,8 @@ import {
   parseTcx,
   fitRecordsToTrackPoints,
   checkpointsToTrackPoints,
+  trimTrack,
+  reverseTrack,
   parseGpxWaypoints,
   locateOnTrack,
   buildProfile,
@@ -96,6 +98,12 @@ const L = {
     themeLabel: '出圖主題',
     watermarkLabel: '顯示站名浮水印',
     steepestLabel: '標注最陡 1km',
+    reverse: '⇄ 反轉方向',
+    trimLabel: '裁切',
+    trimStartAria: '裁切起點 km',
+    trimEndAria: '裁切終點 km',
+    trimApply: '套用裁切',
+    trimReset: '回復完整路線',
     steepestOnChart: (pct: string) => `最陡 1km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: '賽段剖面圖',
@@ -204,6 +212,12 @@ const L = {
     themeLabel: 'Theme',
     watermarkLabel: 'Show site watermark',
     steepestLabel: 'Mark steepest km',
+    reverse: '⇄ Reverse direction',
+    trimLabel: 'Trim',
+    trimStartAria: 'Trim start km',
+    trimEndAria: 'Trim end km',
+    trimApply: 'Apply trim',
+    trimReset: 'Restore full route',
     steepestOnChart: (pct: string) => `Steepest km ${pct}%`,
     cursorReadout: (km: string, ele: number, pct: string) => `${km} km ・ ${ele} m ・ ${pct}%`,
     svgAria: 'Stage profile chart',
@@ -688,6 +702,13 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
   const [error, setError] = useState('');
   const svgRef = useRef<SVGSVGElement | null>(null);
   const theme = THEMES[themeIdx];
+  // 原始載入的完整軌跡與航點（「回復完整路線」用）；目前顯示中的軌跡
+  const fullTrackRef = useRef<TrackPoint[] | null>(null);
+  const fullWaypointsRef = useRef<Waypoint[]>([]);
+  const currentTrackRef = useRef<TrackPoint[] | null>(null);
+  const [edited, setEdited] = useState(false); // 目前視圖被裁切/反轉過
+  const [trimStart, setTrimStart] = useState('');
+  const [trimEnd, setTrimEnd] = useState('');
 
   // 分享連結還原：?r= 帶簡化輪廓 → 零檔案重建剖面圖
   useEffect(() => {
@@ -734,8 +755,17 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     [profile, title, waypoints]
   );
 
-  // 共同管線：軌跡點（＋可選的航點/標題）→ 剖面、爬坡、地標
-  function applyTrack(points: TrackPoint[], autoWaypoints: Waypoint[], newTitle: string) {
+  // 共同管線：軌跡點（＋可選的航點/標題）→ 剖面、爬坡、地標。
+  // preserveFull=true 表示這是裁切/反轉等「視圖編輯」，不覆蓋原始完整軌跡
+  function applyTrack(points: TrackPoint[], autoWaypoints: Waypoint[], newTitle: string, opts?: { preserveFull?: boolean }) {
+    if (!opts?.preserveFull) {
+      fullTrackRef.current = points;
+      fullWaypointsRef.current = autoWaypoints;
+      setEdited(false);
+      setTrimStart('');
+      setTrimEnd('');
+    }
+    currentTrackRef.current = points;
     const p = buildProfile(points);
     const cs = detectClimbs(p.samples);
     setProfile(p);
@@ -744,6 +774,49 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
     setWaypoints(autoWaypoints);
     setDetailIdx(null);
     setTitle(newTitle);
+  }
+
+  // 裁切目前視圖到 [起,訖] km；地標公里數平移、超出範圍者剔除
+  function applyTrim() {
+    const cur = currentTrackRef.current;
+    if (!cur || !profile) return;
+    setError('');
+    try {
+      const sKm = trimStart.trim() === '' ? 0 : Number(trimStart);
+      const eKm = trimEnd.trim() === '' ? profile.totalDistanceM / 1000 : Number(trimEnd);
+      const seg = trimTrack(cur, sKm * 1000, eKm * 1000);
+      const shifted = waypoints
+        .map((w) => ({ ...w, kmNum: Number(w.km) - sKm }))
+        .filter((w) => Number.isFinite(w.kmNum) && w.kmNum >= 0 && w.kmNum <= eKm - sKm && w.name.trim() !== '')
+        .map((w) => ({ km: w.kmNum.toFixed(1), name: w.name }));
+      applyTrack(seg, shifted, title, { preserveFull: true });
+      setEdited(true);
+      setTrimStart('');
+      setTrimEnd('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.readError);
+    }
+  }
+
+  // 反轉目前視圖：終點變起點；地標公里數鏡像翻轉
+  function reverseRoute() {
+    const cur = currentTrackRef.current;
+    if (!cur || !profile) return;
+    const totalKm = profile.totalDistanceM / 1000;
+    const flipped = waypoints
+      .map((w) => ({ ...w, kmNum: totalKm - Number(w.km) }))
+      .filter((w) => Number.isFinite(w.kmNum) && w.name.trim() !== '')
+      .map((w) => ({ km: w.kmNum.toFixed(1), name: w.name }));
+    applyTrack(reverseTrack(cur), flipped, title, { preserveFull: true });
+    setEdited(true);
+  }
+
+  // 回復載入時的完整路線（原方向、原地標）
+  function resetView() {
+    if (!fullTrackRef.current) return;
+    setError('');
+    applyTrack(fullTrackRef.current, fullWaypointsRef.current, title, { preserveFull: true });
+    setEdited(false);
   }
 
   async function loadFile(file: File) {
@@ -982,6 +1055,46 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
               <Toggle label={t.watermarkLabel} checked={watermark} onChange={setWatermark} />
               <Toggle label={t.steepestLabel} checked={showSteepest} onChange={setShowSteepest} />
             </span>
+          </div>
+
+          {/* 視圖編輯：裁切區段（實騎檔常帶市區暖身/回程）與方向反轉 */}
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <button
+              onClick={reverseRoute}
+              className="rounded-md border border-edge px-3 py-1 text-muted transition-colors hover:border-accent hover:text-accent"
+            >
+              {t.reverse}
+            </button>
+            <span className="ml-2 text-muted">{t.trimLabel}</span>
+            <input
+              type="number"
+              value={trimStart}
+              onChange={(e) => setTrimStart(e.target.value)}
+              placeholder="0"
+              aria-label={t.trimStartAria}
+              className="w-20 rounded border border-edge bg-bg px-2 py-1 font-mono text-sm text-ink outline-none focus:border-accent"
+            />
+            <span className="text-muted">–</span>
+            <input
+              type="number"
+              value={trimEnd}
+              onChange={(e) => setTrimEnd(e.target.value)}
+              placeholder={stats ? stats.km : ''}
+              aria-label={t.trimEndAria}
+              className="w-20 rounded border border-edge bg-bg px-2 py-1 font-mono text-sm text-ink outline-none focus:border-accent"
+            />
+            <span className="text-muted">km</span>
+            <button
+              onClick={applyTrim}
+              className="rounded-md border border-edge px-3 py-1 text-muted transition-colors hover:border-accent hover:text-accent"
+            >
+              {t.trimApply}
+            </button>
+            {edited && (
+              <button onClick={resetView} className="text-accent hover:underline">
+                {t.trimReset}
+              </button>
+            )}
           </div>
 
           <ProfileSvg

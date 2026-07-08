@@ -183,6 +183,34 @@ test('分享連結：開啟 ?r= 即重建剖面圖（標題＋地標）', async 
   await expect(page.getByRole('button', { name: /複製分享連結/ })).toBeVisible();
 });
 
+test('裁切與反轉：2–10km 區段 → 反轉變下坡 → 回復完整路線', async ({ page }) => {
+  await page.goto('/tools/stage-profile');
+  await waitForIslands(page);
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'ride.gpx',
+    mimeType: 'application/gpx+xml',
+    buffer: Buffer.from(syntheticGpx(), 'utf-8'),
+  });
+  await expect(page.getByText('12.0 km', { exact: true })).toBeVisible();
+
+  // 裁切 2–10km → 總距離 8.0 km，整段爬坡仍為二級
+  await page.getByLabel('裁切起點 km').fill('2');
+  await page.getByLabel('裁切終點 km').fill('10');
+  await page.getByRole('button', { name: '套用裁切' }).click();
+  await expect(page.getByText('8.0 km', { exact: true })).toBeVisible();
+  await expect(page.getByText('2 級', { exact: true })).toBeVisible();
+
+  // 反轉 → 爬坡變下坡 → 偵測爬坡歸零
+  await page.getByRole('button', { name: '⇄ 反轉方向' }).click();
+  await expect(page.getByText('0 段', { exact: true })).toBeVisible();
+
+  // 回復完整路線 → 12 km、一段爬坡
+  await page.getByRole('button', { name: '回復完整路線' }).click();
+  await expect(page.getByText('12.0 km', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 段', { exact: true })).toBeVisible();
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
