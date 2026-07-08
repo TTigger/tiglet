@@ -46,7 +46,8 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await page.getByLabel('爬坡 1 名稱').fill('測試坡');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/測試坡（海拔 \d+m）/); // 平滑後坡頂 ≈499m
 
-  // 加一個補給站地標 → 斜排標注畫進 SVG
+  // 加一個補給站地標（在「編輯」分頁）→ 斜排標注畫進 SVG
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   await page.getByRole('button', { name: '＋ 新增地標' }).click();
   await page.getByLabel('地標 1 公里數').fill('6');
   await page.getByLabel('地標 1 名稱').fill('西寶補給站');
@@ -61,7 +62,8 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   // 細部圖必須在表格內（行內展開），不是掛在頁面底部
   await expect(page.getByRole('table').getByRole('img', { name: '爬坡細部圖' })).toBeVisible();
 
-  // 浮水印預設開啟且在圖内；關閉 toggle 後消失
+  // 浮水印預設開啟且在圖内；關閉 toggle 後消失（回「圖面」分頁）
+  await page.getByRole('button', { name: '圖面', exact: true }).click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText('tiglet.vercel.app');
   await page.getByLabel('顯示站名浮水印').uncheck();
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText('tiglet.vercel.app');
@@ -87,6 +89,7 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   await page.getByRole('button', { name: 'Tiglet 暖橘' }).click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#FAF9F5');
 
+  await page.getByRole('button', { name: '輸出', exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '下載 PNG 圖片' }).click();
   const download = await downloadPromise;
@@ -106,7 +109,8 @@ test('GPX 內建航點自動帶入地標並畫進圖', async ({ page }) => {
     buffer: Buffer.from(gpx, 'utf-8'),
   });
 
-  // 自動帶入地標編輯列（約 6km）且畫進 SVG
+  // 自動帶入地標編輯列（「編輯」分頁）且畫進 SVG
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   await expect(page.getByLabel('地標 1 名稱')).toHaveValue('山腰補給');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/山腰補給 \d+m/);
 });
@@ -146,7 +150,8 @@ test('零檔案：載入範例路線直接出圖', async ({ page }) => {
 
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
   await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue(/範例路線/);
-  // 範例自帶一個地標
+  // 範例自帶一個地標（「編輯」分頁）
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   await expect(page.getByLabel('地標 1 名稱')).toHaveValue('山腳補給站');
 });
 
@@ -175,11 +180,13 @@ test('分享連結：開啟 ?r= 即重建剖面圖（標題＋地標）', async 
 
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
   await expect(page.getByPlaceholder('例如：2026-07-06 西進武嶺')).toHaveValue('分享測試坡');
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   await expect(page.getByLabel('地標 1 名稱')).toHaveValue('中途補給');
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toContainText(/中途補給 \d+m/);
   // 8km@5% → 二級坡照樣被偵測
   await expect(page.getByText('2 級', { exact: true })).toBeVisible();
-  // 出圖後有分享按鈕
+  // 出圖後有分享按鈕（「輸出」分頁）
+  await page.getByRole('button', { name: '輸出', exact: true }).click();
   await expect(page.getByRole('button', { name: /複製分享連結/ })).toBeVisible();
 });
 
@@ -194,7 +201,8 @@ test('裁切與反轉：2–10km 區段 → 反轉變下坡 → 回復完整路�
   });
   await expect(page.getByText('12.0 km', { exact: true })).toBeVisible();
 
-  // 裁切 2–10km → 總距離 8.0 km，整段爬坡仍為二級
+  // 裁切 2–10km（「編輯」分頁）→ 總距離 8.0 km，整段爬坡仍為二級
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   await page.getByLabel('裁切起點 km').fill('2');
   await page.getByLabel('裁切終點 km').fill('10');
   await page.getByRole('button', { name: '套用裁切' }).click();
@@ -222,7 +230,8 @@ test('疊圖比較與匯出尺寸：藍線＋標籤上圖、4× PNG 實際寬 33
   });
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
 
-  // 疊加第二條路線（同型但整體高 100m）→ 標題畫進圖；移除後消失
+  // 疊加第二條路線（「編輯」分頁；同型但整體高 100m）→ 標題畫進圖；移除後消失
+  await page.getByRole('button', { name: '編輯', exact: true }).click();
   const compareGpx = syntheticGpx().replace(/<name>測試爬坡<\/name>/, '<name>比較用路線</name>').replace(/<ele>(\d+(?:\.\d+)?)<\/ele>/g, (_, e) => `<ele>${Number(e) + 100}</ele>`);
   await page.getByLabel('上傳比較路線').setInputFiles({
     name: 'compare.gpx',
@@ -234,7 +243,8 @@ test('疊圖比較與匯出尺寸：藍線＋標籤上圖、4× PNG 實際寬 33
   await page.getByLabel('移除比較路線').click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).not.toContainText('比較用路線');
 
-  // 匯出尺寸 4× → 下載的 PNG 標頭寬度必須是 3360（IHDR 第 16–19 位元組）
+  // 匯出尺寸 4×（「輸出」分頁）→ 下載的 PNG 標頭寬度必須是 3360（IHDR 第 16–19 位元組）
+  await page.getByRole('button', { name: '輸出', exact: true }).click();
   await page.getByLabel('匯出尺寸').selectOption('4');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: '下載 PNG 圖片' }).click();
@@ -255,6 +265,7 @@ test.describe('桌機匯出按鈕', () => {
     await page.getByRole('button', { name: /載入範例路線/ }).click();
     await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
 
+    await page.getByRole('button', { name: '輸出', exact: true }).click();
     const copyBtn = page.getByRole('button', { name: '複製圖片' });
     await expect(copyBtn).toBeVisible();
     await copyBtn.click();
@@ -279,6 +290,7 @@ test.describe('觸控裝置匯出按鈕', () => {
     await page.getByRole('button', { name: /載入範例路線/ }).click();
     await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
 
+    await page.getByRole('button', { name: '輸出', exact: true }).click();
     await page.getByRole('button', { name: '預覽圖片' }).click();
     const dialog = page.getByRole('dialog', { name: '預覽圖片' });
     await expect(dialog).toBeVisible();
@@ -295,6 +307,7 @@ test('透明背景：匯出 PNG 的角落與主圖上緣像素 alpha 必須為 0
   await page.getByRole('button', { name: /載入範例路線/ }).click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
 
+  await page.getByRole('button', { name: '輸出', exact: true }).click();
   await page.getByLabel('匯出尺寸').selectOption('1');
   await page.getByLabel('透明背景').check();
   const downloadPromise = page.waitForEvent('download');
