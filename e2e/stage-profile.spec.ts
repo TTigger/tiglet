@@ -246,6 +246,43 @@ test('疊圖比較與匯出尺寸：藍線＋標籤上圖、4× PNG 實際寬 33
   expect(buf.readUInt32BE(20)).toBe(1520);
 });
 
+test.describe('桌機匯出按鈕', () => {
+  test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+  test('複製圖片可用、預覽按鈕不出現', async ({ page }) => {
+    await page.goto('/tools/stage-profile');
+    await waitForIslands(page);
+    await page.getByRole('button', { name: /載入範例路線/ }).click();
+    await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+
+    // 桌機（pointer: fine）：不顯示預覽；顯示複製圖片
+    await expect(page.getByRole('button', { name: '預覽圖片' })).toHaveCount(0);
+    const copyBtn = page.getByRole('button', { name: '複製圖片' });
+    await expect(copyBtn).toBeVisible();
+    await copyBtn.click();
+    await expect(page.getByRole('button', { name: '已複製 ✓' })).toBeVisible();
+  });
+});
+
+test.describe('觸控裝置匯出按鈕', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test('預覽燈箱：出圖 → 預覽 → 長按提示 → 關閉', async ({ page }) => {
+    await page.goto('/tools/stage-profile');
+    await waitForIslands(page);
+    await page.getByRole('button', { name: /載入範例路線/ }).click();
+    await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
+
+    await page.getByRole('button', { name: '預覽圖片' }).click();
+    const dialog = page.getByRole('dialog', { name: '預覽圖片' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('img')).toBeVisible();
+    await expect(dialog.getByText('長按圖片即可儲存到照片')).toBeVisible();
+    await dialog.getByRole('button', { name: '關閉' }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+});
+
 test('壞掉的 GPX 顯示錯誤而不是掛掉', async ({ page }) => {
   await page.goto('/tools/stage-profile');
   await waitForIslands(page);
