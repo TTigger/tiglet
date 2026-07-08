@@ -249,18 +249,24 @@ test('疊圖比較與匯出尺寸：藍線＋標籤上圖、4× PNG 實際寬 33
 test.describe('桌機匯出按鈕', () => {
   test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
-  test('複製圖片可用、預覽按鈕不出現', async ({ page }) => {
+  test('複製圖片可用、預覽帶桌機提示（右鍵另存）', async ({ page }) => {
     await page.goto('/tools/stage-profile');
     await waitForIslands(page);
     await page.getByRole('button', { name: /載入範例路線/ }).click();
     await expect(page.getByRole('img', { name: '賽段剖面圖' })).toBeVisible();
 
-    // 桌機（pointer: fine）：不顯示預覽；顯示複製圖片
-    await expect(page.getByRole('button', { name: '預覽圖片' })).toHaveCount(0);
     const copyBtn = page.getByRole('button', { name: '複製圖片' });
     await expect(copyBtn).toBeVisible();
     await copyBtn.click();
     await expect(page.getByRole('button', { name: '已複製 ✓' })).toBeVisible();
+
+    // 桌機（pointer: fine）也有預覽，提示文字換成右鍵另存
+    await page.getByRole('button', { name: '預覽圖片' }).click();
+    const dialog = page.getByRole('dialog', { name: '預覽圖片' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('在圖片上按右鍵可另存或複製')).toBeVisible();
+    await dialog.getByRole('button', { name: '關閉' }).click();
+    await expect(dialog).toHaveCount(0);
   });
 });
 

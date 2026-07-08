@@ -117,6 +117,7 @@ const L = {
     transparentLabel: '透明背景',
     previewBtn: '預覽圖片',
     previewHint: '長按圖片即可儲存到照片',
+    previewHintDesktop: '在圖片上按右鍵可另存或複製',
     previewClose: '關閉',
     shareImageBtn: '分享圖片',
     copyImageBtn: '複製圖片',
@@ -248,6 +249,7 @@ const L = {
     transparentLabel: 'Transparent background',
     previewBtn: 'Preview image',
     previewHint: 'Long-press the image to save it to Photos',
+    previewHintDesktop: 'Right-click the image to save or copy it',
     previewClose: 'Close',
     shareImageBtn: 'Share image',
     copyImageBtn: 'Copy image',
@@ -1458,11 +1460,9 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
               <option value="story">{t.sizeStory}</option>
             </select>
             <Toggle label={t.transparentLabel} checked={transparent} onChange={setTransparent} />
-            {isTouch && (
-              <button onClick={openPreview} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
-                {t.previewBtn}
-              </button>
-            )}
+            <button onClick={openPreview} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
+              {t.previewBtn}
+            </button>
             {canShareFiles && (
               <button onClick={shareImage} className="rounded-lg border border-edge px-4 py-2 text-sm text-ink transition-colors hover:border-accent hover:text-accent">
                 {t.shareImageBtn}
@@ -1503,7 +1503,7 @@ export default function StageProfile({ locale = 'zh' }: { locale?: Locale }) {
             onClick={(e) => e.stopPropagation()}
             className="max-h-[80vh] max-w-full rounded-lg shadow-2xl"
           />
-          <p className="text-sm text-white/90">{t.previewHint}</p>
+          <p className="text-sm text-white/90">{isTouch ? t.previewHint : t.previewHintDesktop}</p>
           <button
             onClick={closePreview}
             className="rounded-lg border border-white/40 px-5 py-1.5 text-sm text-white transition-colors hover:border-white"
