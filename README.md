@@ -48,6 +48,7 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 | Utilities | **Color Extractor** | Upload an image and pull out its dominant colors (median cut), copyable as HEX/RGB |
 | Utilities | **Image Studio** | Compress, resize, and convert (JPEG / PNG / WebP) with a before/after comparison |
 | Utilities | **Taiwan ID Validator** | Checksum validation for Taiwan national IDs and business numbers (2023 rule), with test-number generators |
+| Utilities | **URL Audit** | Paste a URL to score its SEO, Open Graph social cards and GEO (AI-engine) readiness, with a simulated FB/X/LINE share-card preview and concrete fixes; the page HTML is fetched through a stateless proxy, then analyzed in your browser |
 | Cycling | **Gear Calculator** | Road-bike drivetrain math — gear ratio matrix, cadence→speed tables, A/B setup comparison, and derailleur capacity check, all shareable via URL |
 | Cycling | **Ride Fuel** | Convert your bike computer's kJ into kcal burned and food equivalents, with carbs-per-hour fueling and sweat-rate hydration guidance |
 | Cycling | **FTP Zones** | Coggan 7-zone power table with sweet spot, W/kg level reference, and heart-rate zones (LTHR or max-HR method) |
@@ -131,17 +132,27 @@ The site is a static Astro build and deploys to **Vercel** with zero configurati
 import the repository and Vercel auto-detects Astro. `vercel.json` pins the build
 command and output directory, and `.npmrc` keeps installs reproducible.
 
+Every page is prerendered; there is no SSR adapter. The one exception is `api/`,
+a directory of standalone Vercel serverless functions that Vercel picks up
+alongside the static output. Today it holds a single function, `fetch-meta`,
+which URL Audit uses to fetch a page's HTML (the browser can't, because of CORS).
+Functions here must stay stateless — no database, no logging of user input.
+
 ## Privacy
 
-Tiglet is essentially 100% client-side. The raffle's Excel import, the QR generator, the
-image compressor/resizer, the color extractor, and every other tool process your data
-locally in the browser — nothing is uploaded.
+Tiglet is almost entirely client-side — no login, no cookies, no ads. The raffle's Excel
+import, the QR generator, the image compressor/resizer, the color extractor, and every
+other tool process your data locally in the browser and upload nothing.
 
-Outbound network requests are limited to two things:
+The few exceptions are all stateless — nothing you send is stored:
 
 - The **Converter** fetches public exchange rates from
   [open.er-api.com](https://open.er-api.com). No user input is sent — it simply
   downloads the latest rate table.
+- **URL Audit** sends the URL you enter to a stateless serverless function
+  (`/api/fetch-meta`) that fetches the page's HTML and returns it for in-browser
+  analysis. The function stores nothing and keeps no logs of the URL; it also refuses
+  internal/reserved addresses (SSRF guard).
 - **Vercel Web Analytics** collects anonymous, cookie-less page-view counts
   (no personal data, no cross-site tracking, nothing you type is ever sent).
 
