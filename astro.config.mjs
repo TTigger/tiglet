@@ -63,6 +63,9 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // 分享卡只有 FB／X／LINE 的 crawler 會抓，使用者永遠不會開。
+        // 不排除的話這 66 張（約 2.3MB）會被塞進 service worker 預快取。
+        globIgnores: ['og/**'],
       },
     }),
   ],

@@ -36,6 +36,9 @@ docs/
 # vercel cli
 .vercel/
 
+# OG 生圖腳本的字型與 emoji 快取（CJK 全字集十幾 MB，不進版控）
+scripts/.cache/
+
 # test coverage
 coverage/
 
