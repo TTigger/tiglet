@@ -1,0 +1,14 @@
+{
+  "//": "Vercel's @vercel/node builder compiles api/ on its own, with nodenext module resolution (package.json is type: module). The root tsconfig extends astro/tsconfigs/strict, which uses bundler resolution and silently accepts extensionless relative imports that crash the deployed function. This config mirrors the builder so `npm run typecheck:api` fails locally and in CI instead of at runtime.",
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["**/*.ts"]
+}

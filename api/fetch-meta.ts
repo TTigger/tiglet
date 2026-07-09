@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { promises as dns } from 'node:dns';
-import { validateFetchUrl, isPrivateIp } from '../src/lib/ssrfGuard';
+// 副檔名不可省：Vercel 以 nodenext 解析 api/，省略會編譯失敗（見 api/tsconfig.json）
+import { validateFetchUrl, isPrivateIp } from '../src/lib/ssrfGuard.js';
 
 // 網址健檢的抓取代理：無狀態，只把目標網頁的 HTML 抓回來給前端評分。
 // 不儲存任何資料。防護：協定/主機白名單 → DNS 解析後複查私有 IP（擋 rebinding）

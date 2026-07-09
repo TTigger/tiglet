@@ -23,6 +23,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # astro build ignores api/; only Vercel compiles it, and a failure there
+      # still deploys a broken function. Type-check it the way Vercel does.
+      - name: Type-check serverless functions
+        run: npm run typecheck:api
+
       - name: Unit tests
         run: npm test
 
