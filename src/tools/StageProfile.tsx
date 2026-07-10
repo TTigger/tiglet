@@ -4,6 +4,7 @@ import ShareLinkButton from '../components/ShareLinkButton';
 import Tabs from '../components/Tabs';
 import Toggle from '../components/Toggle';
 import { simplifyProfile, encodeRouteShare, decodeRouteShare } from '../lib/routeShare';
+import { THEMES, THEME_EN, type ProfileTheme } from '../lib/profileThemes';
 import type { Locale } from '../lib/i18n';
 import {
   parseGpx,
@@ -312,34 +313,7 @@ const L = {
 
 type Dict = (typeof L)[Locale];
 
-// 出圖主題名稱的英文（按鈕 UI 用；id 對映，不動 THEMES 本體）
-const THEME_EN: Record<string, string> = {
-  tiglet: 'Tiglet warm',
-  tour: 'Tour yellow',
-  giro: 'Giro pink',
-  vuelta: 'Vuelta red',
-};
-
-// 檔案完全在本機解析；SVG 用固定色票（非 CSS 變數），
-// 匯出的 PNG 才不會受深淺色主題影響。出圖主題只換底/墨/點綴色，
-// 坡度色階是語意（多陡），不隨主題變。
-
-export interface ProfileTheme {
-  id: string;
-  label: string;
-  bg: string;
-  ink: string;
-  muted: string;
-  grid: string;
-  accent: string;
-}
-
-const THEMES: ProfileTheme[] = [
-  { id: 'tiglet', label: 'Tiglet 暖橘', bg: '#FAF9F5', ink: '#1A1A18', muted: '#6B6A63', grid: '#D6D1C4', accent: '#D97757' },
-  { id: 'tour', label: '環法黃', bg: '#FFFFFF', ink: '#14141E', muted: '#5A5A66', grid: '#E2E2E8', accent: '#D4A800' },
-  { id: 'giro', label: '環義粉', bg: '#FFF6FA', ink: '#2B1A22', muted: '#8A6A78', grid: '#F0D4E2', accent: '#E5518D' },
-  { id: 'vuelta', label: '環西紅', bg: '#FFFAF6', ink: '#241514', muted: '#8A6A62', grid: '#F0DCD0', accent: '#DA291C' },
-];
+// 出圖主題資料在 src/lib/profileThemes.ts（純資料抽成 lib，讓對比守門測試吃得到）
 
 const W = 840;
 const H = 380;
