@@ -86,6 +86,9 @@ test('上傳 GPX → 生成剖面圖與爬坡分級 → 下載 PNG', async ({ pa
   // 出圖主題切換 → SVG 底色跟著換（環義粉 #FFF6FA）
   await page.getByRole('button', { name: '環義粉' }).click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#FFF6FA');
+  // 深色主題（午夜黑 #171A21）
+  await page.getByRole('button', { name: '午夜黑' }).click();
+  await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#171A21');
   await page.getByRole('button', { name: 'Tiglet 暖橘' }).click();
   await expect(page.getByRole('img', { name: '賽段剖面圖' }).locator('rect').first()).toHaveAttribute('fill', '#FAF9F5');
 
