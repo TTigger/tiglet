@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InvoiceLottery from '../../tools/InvoiceLottery.tsx';
+---
+<BaseLayout title="發票對獎 — Tiglet" description="統一發票對獎：自動抓財政部最新開獎號碼，輸入末 3 碼立刻知道有沒有中，補到 8 碼確認獎級。號碼比對只在瀏覽器本機進行。" toolId="invoice-lottery">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">發票對獎</h1>
+  <InvoiceLottery client:visible />
+</BaseLayout>
