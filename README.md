@@ -8,8 +8,21 @@ Built with Astro + React islands + Tailwind CSS v4, deployed on Vercel.
 > 🔗 **Live demo:** [tiglet.vercel.app](https://tiglet.vercel.app)
 
 Almost everything runs entirely in your browser. No accounts, no cookies, no ads —
-your input never leaves your device. (The exceptions: the currency converter fetches
-public exchange rates, and anonymous page views are counted; see [Privacy](#privacy).)
+your input never leaves your device. (The exceptions: a few tools fetch public data
+like exchange rates or official lottery numbers, and anonymous page views are counted;
+see [Privacy](#privacy).)
+
+## See it in ten seconds
+
+**Stage Profile** — drop in a GPX and get a Tour-style stage chart: hover readout,
+auto-categorized climbs, and switchable export themes (including midnight dark):
+
+![Stage Profile demo](.github/demo/stage-profile.gif)
+
+**URL Audit** — paste a URL and get an SEO / social-card / AI-readiness score with a
+simulated share preview (here it is auditing one of its own pages — 100/100):
+
+![URL Audit demo](.github/demo/url-audit.gif)
 
 ## Features
 
@@ -21,8 +34,8 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 - **Shareable deep links** — tool state lives in the URL (e.g. the wheel's options)
 - **Playful, accessible animations** — dice tumble in 3D, the wheel decelerates, the timer
   ring drains, the raffle reels, 2048 tiles pop; all respect `prefers-reduced-motion`
-- **SEO-ready** — canonical URLs, Open Graph / Twitter cards, JSON-LD, and an auto-generated sitemap
-- **Installable PWA** — add to your home screen and use it offline
+- **SEO-ready** — canonical URLs, per-tool bilingual Open Graph share cards (66+ pre-rendered PNGs), JSON-LD, and an auto-generated sitemap
+- **Installable PWA** — add to your home screen, use it offline, and share / open route files straight into Stage Profile
 
 ## Tools
 
@@ -31,7 +44,7 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 | Calculators | **Calculator** | Four-function calculator with keyboard input |
 | Calculators | **Text Calculator** | Type an expression, get the result (safe parser — no `eval`) |
 | Calculators | **Converter** | Unit conversion (length, mass, temperature, area incl. _ping_, volume, speed, data) plus live currency conversion |
-| Calculators | **Everyday Calc** | BMI (Taiwan HPA bands), percentage helpers, discounts, and tip-splitting — in tabs |
+| Calculators | **Everyday Calc** | BMI (Taiwan HPA bands), percentage helpers, discounts, tip-splitting, and Chinese uppercase amounts — in tabs |
 | Calculators | **World Clock** | Live multi-city clocks with DST-aware offsets, time differences, and a from-zone → to-zone time projection |
 | Calculators | **Date Calculator** | Date differences, date projection (with month-end clamping), shareable countdowns, and workday counting |
 | Games | **Tic-Tac-Toe** | Two-player or vs. an unbeatable computer (minimax) |
@@ -40,20 +53,24 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 | Games | **Snake** | The classic — eat to grow, avoid the walls and yourself; keyboard or on-screen D-pad |
 | Random | **Decision Wheel** | Spin a wheel of options; share the options via the URL |
 | Random | **Name Raffle** | Draw winners from a list or an imported **Excel / CSV** file, with per-prize rounds |
-| Utilities | **Timer** | Countdown (with presets) and stopwatch, with a progress ring and a beep on finish |
+| Utilities | **Timer** | Countdown (with presets), stopwatch, and interval training mode, with a progress ring and a beep on finish |
 | Utilities | **Dice** | Roll any number of 3D d4–d20 dice (real pip faces for d6), total them, keep a roll history |
-| Utilities | **QR Code** | Turn text or a URL into a downloadable QR code |
+| Utilities | **QR Code** | Turn text, URLs, WiFi credentials, or a vCard business card into a downloadable QR code |
+| Utilities | **QR Scanner** | Scan QR codes from your camera or an image (click / drag / paste) — URLs, WiFi and vCards parsed into structured fields; decoded entirely in your browser |
 | Utilities | **Password Generator** | Customizable, ambiguity-free random passwords (Web Crypto CSPRNG) with a strength meter |
 | Utilities | **Color Converter** | Convert between HEX / RGB / HSL live, with a picker and one-tap copy |
 | Utilities | **Color Extractor** | Upload an image and pull out its dominant colors (median cut), copyable as HEX/RGB |
-| Utilities | **Image Studio** | Compress, resize, and convert (JPEG / PNG / WebP) with a before/after comparison |
+| Utilities | **Image Studio** | Compress, resize, convert (JPEG / PNG / WebP), and inspect / strip EXIF metadata, with a before/after comparison |
 | Utilities | **Taiwan ID Validator** | Checksum validation for Taiwan national IDs and business numbers (2023 rule), with test-number generators |
 | Utilities | **URL Audit** | Paste a URL to score its SEO, Open Graph social cards and GEO (AI-engine) readiness, with a simulated FB/X/LINE share-card preview and concrete fixes; the page HTML is fetched through a stateless proxy, then analyzed in your browser |
+| Utilities | **Invoice Lottery** | Check Taiwan uniform-invoice numbers against the latest official draw — type the last 3 digits for an instant verdict, keep typing to confirm the prize tier; numbers are matched locally |
+| Utilities | **Fuel Prices (TW)** | Today's CPC Taiwan pump prices (92/95/98, diesel, LPG) with this week's adjustment and a liters ⇄ amount fill-up calculator |
+| Utilities | **PDF Studio** | Merge (with reordering), split by page ranges, and rotate PDFs — files never leave your browser |
 | Cycling | **Gear Calculator** | Road-bike drivetrain math — gear ratio matrix, cadence→speed tables, A/B setup comparison, and derailleur capacity check, all shareable via URL |
 | Cycling | **Ride Fuel** | Convert your bike computer's kJ into kcal burned and food equivalents, with carbs-per-hour fueling and sweat-rate hydration guidance |
 | Cycling | **FTP Zones** | Coggan 7-zone power table with sweet spot, W/kg level reference, and heart-rate zones (LTHR or max-HR method) |
 | Cycling | **Tire Pressure** | Front/rear pressure suggestion (psi + bar) from weight, tire width, tubeless and surface, with a hookless-limit warning |
-| Cycling | **Stage Profile** | Upload a GPX / FIT / TCX (or drag-drop) and get a Tour-style stage profile — climbs auto-detected and categorized (HC–Cat 4), gradient stats, downloadable as PNG; parsed entirely in your browser |
+| Cycling | **Stage Profile** | Upload a GPX / FIT / TCX (or drag-drop) and get a Tour-style stage profile — climbs auto-detected and categorized (HC–Cat 4), waypoints, per-km climb detail, five export themes (incl. midnight dark), shareable links, PNG / IG-story export; parsed entirely in your browser |
 | Text | **Word Count** | Live character / CJK / word / line / paragraph counts with reading-time estimate, Chinese and English counted separately |
 | Text | **Encoder** | Two-way Base64 (UTF-8 safe), URL percent-encoding, and HTML entities conversion with one-tap copy |
 | Text | **Text Diff** | Line-level LCS diff with inline character highlighting — zero dependencies |
@@ -66,13 +83,13 @@ public exchange rates, and anonymous page views are counted; see [Privacy](#priv
 - **[Astro](https://astro.build)** — static output, near-zero JS on the home page
 - **React** — one interactive island per tool, hydrated lazily (`client:visible` / `client:idle`)
 - **Tailwind CSS v4** — design tokens via `@tailwindcss/vite`
-- **Vitest** — unit tests for every tool's core logic (230+ specs)
-- **Playwright** — E2E smoke tests for key flows (deep links, Excel/CSV import, ⌘K palette), run in CI
+- **Vitest** — unit tests for every tool's core logic (550+ specs)
+- **Playwright** — 65 E2E specs for key flows (deep links, file uploads, ⌘K palette, i18n, serverless-backed tools with stubbed APIs), run in CI
 - **[@astrojs/sitemap](https://docs.astro.build/en/guides/integrations-guide/sitemap/)** — sitemap generated at build time
 - **[@vite-pwa/astro](https://vite-pwa-org.netlify.app)** — manifest + service worker
 - **Web platform APIs** — Canvas for the image/color tools, Web Crypto for password generation,
   `Intl` for time zones
-- Client-side **SheetJS** (`xlsx`), **`qrcode`**, and **`marked` + `DOMPurify`** (Markdown preview), all dynamically imported
+- Client-side **SheetJS** (`xlsx`), **`qrcode`** / **`jsqr`**, **`pdf-lib`**, and **`marked` + `DOMPurify`** (Markdown preview), all loaded per tool
 
 ## Getting started
 
@@ -134,15 +151,18 @@ command and output directory, and `.npmrc` keeps installs reproducible.
 
 Every page is prerendered; there is no SSR adapter. The one exception is `api/`,
 a directory of standalone Vercel serverless functions that Vercel picks up
-alongside the static output. Today it holds a single function, `fetch-meta`,
-which URL Audit uses to fetch a page's HTML (the browser can't, because of CORS).
-Functions here must stay stateless — no database, no logging of user input.
+alongside the static output. Today it holds three functions: `fetch-meta`
+(URL Audit's HTML fetcher, with an SSRF guard), `invoice-numbers` (relays the
+Ministry of Finance's official uniform-invoice draw), and `fuel-price` (relays
+CPC's public price feed). Functions here must stay stateless — no database,
+no logging of user input — and every change to `api/` is verified against the
+real deployment before it ships.
 
 ## Privacy
 
 Tiglet is almost entirely client-side — no login, no cookies, no ads. The raffle's Excel
-import, the QR generator, the image compressor/resizer, the color extractor, and every
-other tool process your data locally in the browser and upload nothing.
+import, the QR generator and scanner, the image and PDF tools, the color extractor, and
+every other tool process your data locally in the browser and upload nothing.
 
 The few exceptions are all stateless — nothing you send is stored:
 
@@ -153,6 +173,9 @@ The few exceptions are all stateless — nothing you send is stored:
   (`/api/fetch-meta`) that fetches the page's HTML and returns it for in-browser
   analysis. The function stores nothing and keeps no logs of the URL; it also refuses
   internal/reserved addresses (SSRF guard).
+- **Invoice Lottery** and **Fuel Prices** fetch official public data (the Ministry of
+  Finance's winning numbers, CPC's price feed) through stateless relay functions.
+  Your invoice digits are matched locally — they are never sent anywhere.
 - **Vercel Web Analytics** collects anonymous, cookie-less page-view counts
   (no personal data, no cross-site tracking, nothing you type is ever sent).
 
