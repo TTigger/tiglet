@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QrScanner from '../../tools/QrScanner.tsx';
+---
+<BaseLayout title="QR 掃描 — Tiglet" description="用相機或圖片掃描 QR 碼：網址、WiFi、名片自動解析，解碼完全在瀏覽器本機進行，不會上傳任何影像。" toolId="qr-scanner">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">QR 掃描</h1>
+  <QrScanner client:visible />
+</BaseLayout>
