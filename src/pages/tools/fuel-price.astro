@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FuelPrice from '../../tools/FuelPrice.tsx';
+---
+<BaseLayout title="中油油價 — Tiglet" description="台灣中油今日牌價：92／95／98 無鉛、超級柴油與車用液化石油氣，本週調價一目瞭然，附加油金額試算。" toolId="fuel-price">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">中油油價</h1>
+  <FuelPrice client:visible />
+</BaseLayout>
