@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PdfStudio from '../../tools/PdfStudio.tsx';
+---
+<BaseLayout title="PDF 工具 — Tiglet" description="PDF 合併、拆分（抽出頁碼範圍）與旋轉，全部在瀏覽器本機完成，檔案不會上傳到任何伺服器。" toolId="pdf-studio">
+  <a href="/" class="text-sm text-muted hover:text-accent">← 回到所有工具</a>
+  <h1 class="mt-4 mb-8 font-serif text-3xl text-ink">PDF 工具</h1>
+  <PdfStudio client:visible />
+</BaseLayout>
