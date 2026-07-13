@@ -17,12 +17,12 @@ see [Privacy](#privacy).)
 **Stage Profile** — drop in a GPX and get a Tour-style stage chart: hover readout,
 auto-categorized climbs, and switchable export themes (including midnight dark):
 
-![Stage Profile demo](.github/demo/stage-profile.gif)
+![Stage Profile demo](.github/demo/stage-profile-en.gif)
 
 **URL Audit** — paste a URL and get an SEO / social-card / AI-readiness score with a
 simulated share preview (here it is auditing one of its own pages — 100/100):
 
-![URL Audit demo](.github/demo/url-audit.gif)
+![URL Audit demo](.github/demo/url-audit-en.gif)
 
 ## Features
 

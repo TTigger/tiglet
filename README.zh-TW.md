@@ -16,12 +16,12 @@
 **賽段剖面圖**——丟進 GPX 就生成環法風賽段圖：游標讀數、爬坡自動分級、
 可切換出圖主題（含午夜黑深色）：
 
-![賽段剖面圖示範](.github/demo/stage-profile.gif)
+![賽段剖面圖示範](.github/demo/stage-profile-zh.gif)
 
 **網址健檢**——貼上網址，評 SEO／社群分享卡／AI 引擎就緒度並模擬分享預覽
 （示範裡掃的是它自己的工具頁——100 分滿分）：
 
-![網址健檢示範](.github/demo/url-audit.gif)
+![網址健檢示範](.github/demo/url-audit-zh.gif)
 
 ## 特色
 
