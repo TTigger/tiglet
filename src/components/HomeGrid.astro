@@ -6,26 +6,51 @@ import { categoryLabel, type Locale } from '../lib/i18n';
 
 // 首頁主體（zh 與 /en/ 共用）：工具卡片伺服器端輸出（SEO），
 // SearchBar island 負責搜尋過濾與最愛/最近。
+//
+// 分層陳列：單車工具箱緊跟 Hero（賽段剖面圖的配角），完整卡片；
+// 其餘分類收進「更多小工具」用密集列表降權——連結與收藏功能不變，只是不搶焦點。
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const available = tools.filter((t) => t.status === 'available');
+// 賽段剖面圖已經是 Hero 的主角，這裡不再重複列出
+const cycling = available.filter((t) => t.category === '單車' && t.id !== 'stage-profile');
+const restCategories = CATEGORY_ORDER.filter((c) => c !== '單車');
+
+const L = {
+  zh: { cyclingIntro: '賽段剖面圖之外，這些工具幫你把訓練、補給與胎壓也一次算好。', more: '更多小工具' },
+  en: { cyclingIntro: 'Beyond the stage profile, these tools cover training, fueling and tire pressure.', more: 'More tools' },
+} as const;
+const t = L[locale];
 ---
 <SearchBar client:idle locale={locale} />
 <div id="all-tools">
-  {CATEGORY_ORDER.map((cat) => {
-    const inCat = available.filter((t) => t.category === cat);
-    if (inCat.length === 0) return null;
-    return (
-      <section class="mb-10">
-        <h2 class="mb-4 font-serif text-xl text-ink">{categoryLabel(cat, locale)}</h2>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {inCat.map((t) => <ToolCard tool={t} locale={locale} />)}
+  {cycling.length > 0 && (
+    <section class="mb-12" id="cycling">
+      <h2 class="mb-1 font-serif text-xl text-ink">{categoryLabel('單車', locale)}</h2>
+      <p class="mb-4 text-sm text-muted">{t.cyclingIntro}</p>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cycling.map((tool) => <ToolCard tool={tool} locale={locale} />)}
+      </div>
+    </section>
+  )}
+
+  <section class="mb-10">
+    <h2 class="mb-4 text-xs font-medium uppercase tracking-wider text-muted">{t.more}</h2>
+    {restCategories.map((cat) => {
+      const inCat = available.filter((t2) => t2.category === cat);
+      if (inCat.length === 0) return null;
+      return (
+        <div class="mb-5">
+          <h3 class="mb-2 text-sm text-muted">{categoryLabel(cat, locale)}</h3>
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {inCat.map((tool) => <ToolCard tool={tool} locale={locale} compact />)}
+          </div>
         </div>
-      </section>
-    );
-  })}
+      );
+    })}
+  </section>
 </div>
 <script>
   // 靜態卡片星星：單一委派監聽器驅動全部星星，與 SearchBar island 靠事件同步
