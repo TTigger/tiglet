@@ -1,0 +1,51 @@
+---
+import type { Locale } from '../lib/i18n';
+
+// 首頁招牌區：把賽段剖面圖從「36 分之 1」拉出來當全站主軸。
+// 其餘工具在 HomeGrid 分層退場，不在這裡搶焦點。
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+
+const L = {
+  zh: {
+    eyebrow: '🚴 單車 · 賽段剖面圖',
+    heading: '把你的路線變成環法風格賽段圖',
+    body: '上傳 GPX／FIT／TCX，爬坡自動偵測分級，坡度色帶、地標、每公里細部圖一次生成——像武嶺、KOM 這種硬爬坡，一眼看懂全程配速。',
+    cta: '上傳 GPX，立即製作',
+    secondary: '或看看單車工具箱 ↓',
+    gifAlt: '賽段剖面圖示範：上傳路線、游標讀數、深色主題切換',
+  },
+  en: {
+    eyebrow: '🚴 Cycling · Stage Profile',
+    heading: 'Turn your route into a Tour-style stage chart',
+    body: 'Upload a GPX / FIT / TCX and get auto-categorized climbs, gradient color bands, landmarks and per-km detail — read a brutal climb like Wuling or a KOM segment at a glance.',
+    cta: 'Upload a GPX, try it now',
+    secondary: 'Or see the cycling toolkit ↓',
+    gifAlt: 'Stage Profile demo: route upload, hover readout, dark theme switch',
+  },
+} as const;
+const t = L[locale];
+const toolHref = locale === 'en' ? '/en/tools/stage-profile' : '/tools/stage-profile';
+const gifSrc = locale === 'en' ? '/demo/stage-profile-en.gif' : '/demo/stage-profile-zh.gif';
+---
+<section class="mb-14 overflow-hidden rounded-[var(--radius-card)] border border-edge bg-surface">
+  <div class="grid gap-8 p-6 sm:p-10 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+    <div>
+      <p class="mb-3 text-xs font-medium uppercase tracking-wider text-accent">{t.eyebrow}</p>
+      <h1 class="font-serif text-3xl leading-tight text-ink sm:text-4xl">{t.heading}</h1>
+      <p class="mt-4 text-muted">{t.body}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-4">
+        <a
+          href={toolHref}
+          class="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+        >{t.cta}</a>
+        <a href="#cycling" class="text-sm text-muted underline-offset-4 hover:text-accent hover:underline">{t.secondary}</a>
+      </div>
+    </div>
+    <a href={toolHref} class="block overflow-hidden rounded-lg border border-edge" aria-label={t.gifAlt}>
+      <img src={gifSrc} alt={t.gifAlt} width="880" height="560" loading="eager" class="w-full" />
+    </a>
+  </div>
+</section>

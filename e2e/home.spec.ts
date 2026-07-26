@@ -11,6 +11,24 @@ test('首頁 HTML 伺服器端就包含全部工具連結（SEO）', async ({ re
   expect(html).toContain('齒比計算器');
 });
 
+test('首頁 Hero 主打賽段剖面圖，且賽段剖面圖不在單車格線裡重複出現', async ({ page }) => {
+  await page.goto('/');
+  await waitForIslands(page);
+
+  await expect(page.getByRole('heading', { name: '把你的路線變成環法風格賽段圖', level: 1 })).toBeVisible();
+  const heroCta = page.getByRole('link', { name: '上傳 GPX，立即製作' });
+  await expect(heroCta).toHaveAttribute('href', '/tools/stage-profile');
+
+  // 錨點連到下方單車工具箱
+  await page.getByRole('link', { name: '或看看單車工具箱 ↓' }).click();
+  await expect(page).toHaveURL(/#cycling$/);
+
+  // 賽段剖面圖已是 Hero 主角，單車工具箱裡不再重複列出
+  const cyclingSection = page.locator('#cycling');
+  await expect(cyclingSection.getByRole('link', { name: /賽段剖面圖/ })).toHaveCount(0);
+  await expect(cyclingSection.getByRole('link', { name: /齒比計算器/ })).toBeVisible();
+});
+
 test('搜尋會過濾工具格，清空後還原', async ({ page }) => {
   await page.goto('/');
   await waitForIslands(page);

@@ -1,11 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
 import HomeGrid from '../components/HomeGrid.astro';
 ---
-<BaseLayout>
-  <section class="mb-10">
-    <h1 class="font-serif text-4xl text-ink">Tiglet</h1>
-    <p class="mt-2 text-muted">一組乾淨、免登入的瀏覽器小工具。</p>
-  </section>
+<BaseLayout
+  title="Tiglet — 把路線變成賽段剖面圖"
+  description="上傳 GPX／FIT／TCX，自動生成環法風格賽段剖面圖，爬坡自動分級；還有發票對獎、中油油價等台灣在地小工具與齒比、胎壓等單車工具箱，全部免登入、在瀏覽器裡完成。"
+>
+  <Hero locale="zh" />
   <HomeGrid locale="zh" />
 </BaseLayout>

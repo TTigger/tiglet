@@ -4,26 +4,48 @@ import { toolTitle, toolDescription, toolPath, type Locale } from '../lib/i18n';
 
 // 純伺服器端卡片：星星是普通按鈕，由 index.astro 的委派腳本驅動
 // （不用 29 個 React islands，首頁保持輕量）
+// compact：首頁「更多小工具」用的密集樣式（陳列級工具降權，但連結與收藏功能不變）
 interface Props {
   tool: Tool;
   locale?: Locale;
+  compact?: boolean;
 }
-const { tool, locale = 'zh' } = Astro.props;
+const { tool, locale = 'zh', compact = false } = Astro.props;
 ---
 <a
   href={toolPath(tool, locale)}
-  class="group relative block rounded-[var(--radius-card)] border border-edge bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]"
+  class={compact
+    ? 'group relative flex items-center gap-2.5 rounded-lg border border-edge bg-surface px-3 py-2.5 transition-colors hover:border-accent/40'
+    : 'group relative block rounded-[var(--radius-card)] border border-edge bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]'}
 >
-  <div class="mb-3 flex items-center justify-between">
-    <span class="text-2xl">{tool.icon}</span>
-    <button
-      type="button"
-      class="js-fav text-base leading-none transition-transform hover:scale-110"
-      data-id={tool.id}
-      aria-label={locale === 'en' ? 'Pin tool' : '釘選工具'}
-      aria-pressed="false"
-    >☆</button>
-  </div>
-  <h3 class="font-serif text-lg text-ink">{toolTitle(tool, locale)}</h3>
-  <p class="mt-1 text-sm text-muted">{toolDescription(tool, locale)}</p>
+  {compact ? (
+    <>
+      <span class="order-1 text-lg">{tool.icon}</span>
+      {/* 星星在標題「前面」出圖：DOM 順序避開跟命令面板結果列同名子字串衝突（星星的 aria-label
+          會併進連結的無障礙名稱），視覺順序仍在最後——與非 compact 卡片的既有結構一致 */}
+      <button
+        type="button"
+        class="js-fav order-3 shrink-0 text-sm leading-none transition-transform hover:scale-110"
+        data-id={tool.id}
+        aria-label={locale === 'en' ? 'Pin tool' : '釘選工具'}
+        aria-pressed="false"
+      >☆</button>
+      <span class="order-2 flex-1 truncate text-sm text-ink">{toolTitle(tool, locale)}</span>
+    </>
+  ) : (
+    <>
+      <div class="mb-3 flex items-center justify-between">
+        <span class="text-2xl">{tool.icon}</span>
+        <button
+          type="button"
+          class="js-fav text-base leading-none transition-transform hover:scale-110"
+          data-id={tool.id}
+          aria-label={locale === 'en' ? 'Pin tool' : '釘選工具'}
+          aria-pressed="false"
+        >☆</button>
+      </div>
+      <h3 class="font-serif text-lg text-ink">{toolTitle(tool, locale)}</h3>
+      <p class="mt-1 text-sm text-muted">{toolDescription(tool, locale)}</p>
+    </>
+  )}
 </a>
